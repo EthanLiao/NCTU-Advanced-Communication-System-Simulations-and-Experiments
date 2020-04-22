@@ -21,3 +21,9 @@ function sh_signal = shift(signal,shamt)
   sh_signal = zeros(1,length(signal))
   sh_signal(1+shamt:end) = signal(1+shamt:end)
 end
+
+function delayed_signal = delay(sig,delay_num)
+  delta = zeros(1,2*delay_num)
+  delta(delay_num) = 1
+  delayed_signal = conv(sig,delta)
+end

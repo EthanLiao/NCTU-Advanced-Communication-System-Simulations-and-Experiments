@@ -1,3 +1,4 @@
+clf;clear all;
 % % ------rectangular wave------
 % ele_nums = 1024
 % mid = ceil(ele_nums/2)
@@ -41,31 +42,34 @@
 % practice1 _version 2
 
 fc_6 = 1/6
-fc_8 = 1/8
+fc_8 = 100
 N = 10
 t_6 = (0:0.01:N)/fc_6
 t_8 = (0:0.01:N)/fc_8
-signal_6 = cos(2*pi*fc_6*t_6)
-signal_6 = shift(signal_6,100)
+signal_6 = sin(2*pi*fc_6*t_6)
 signal_8 = cos(2*pi*fc_8*t_8)
+% signal_8 = zeros(1,length(signal_6))
+% signal_8(1:end) = 1
 combined_signal = signal_6+signal_8
 
 % FIR filter
-zero = poly(1.09656*[cos(pi*fc_6)+i*sin(pi*fc_6),cos(pi*fc_6)-i*sin(pi*fc_6)])
+zero = poly(0.9959*[cos(pi*fc_6)+i*sin(pi*fc_6),cos(pi*fc_6)-i*sin(pi*fc_6)])
 pole = 1
 FIR_signal = filter(zero,pole,combined_signal)
 % IIR filter
-zero = poly(1.09656*[cos(pi*fc_6)+i*sin(pi*fc_6),cos(pi*fc_6)-i*sin(pi*fc_6)])
-pole = poly(0.95999*[cos(pi*fc_8)+i*sin(pi*fc_8),cos(pi*fc_8)-i*sin(pi*fc_8)])
+zero = poly([0.9959*(cos(pi*fc_6)+j*sin(pi*fc_6)),0.9959*(cos(pi*fc_6)-j*sin(pi*fc_6))])
+pole = poly([0.9*(cos(pi*fc_8)+j*sin(pi*fc_8)),0.9*(cos(pi*fc_8)-j*sin(pi*fc_8))])
 IIR_signal = filter(zero,pole,combined_signal)
 
-figure()
-subplot(4,1,1);plot(signal_8);title('original signal')
-subplot(4,1,2);plot(combined_signal);title('combined signal')
-subplot(4,1,3);plot(FIR_signal);title('FIR filtered signal')
-subplot(4,1,4);plot(IIR_signal);title('IIR filtered signal')
 
-function sh_signal = shift(signal,shamt)
-  sh_signal = zeros(1,length(signal))
-  sh_signal(1+shamt:end) = signal(1+shamt:end)
+subplot(5,1,1);plot(delay(signal_8,31));title('original signal')
+subplot(5,1,2);plot(signal_6);title('another signal')
+subplot(5,1,3);plot(combined_signal);title('combined signal')
+subplot(5,1,4);plot(FIR_signal./0.37169);title('FIR filtered signal')
+subplot(5,1,5);plot(IIR_signal./max(IIR_signal));title('IIR filtered signal')
+
+function delayed_signal = delay(sig,delay_num)
+  delta = zeros(1,2*delay_num)
+  delta(delay_num) = 1
+  delayed_signal = conv(sig,delta)
 end
