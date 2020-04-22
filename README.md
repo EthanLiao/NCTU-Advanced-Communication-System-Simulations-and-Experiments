@@ -1,5 +1,9 @@
 # NCTU Advanced Communication System Simulations and Experiments
 ## Lab 1 MATLAB introduction
+- Practice 1 to 4
+![](https://i.imgur.com/ns89wVG.png)
+
+
 ## Lab 2 Signals and the Fourier transform 
 ## Lab 3 LTI systems and their responses 
 ## Lab 4 Analog modulation 
