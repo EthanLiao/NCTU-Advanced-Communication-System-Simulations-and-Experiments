@@ -42,7 +42,7 @@ clf;clear all;
 % practice1 _version 2
 
 fc_6 = 1/6
-fc_8 = 100
+fc_8 = 1/8
 N = 10
 t_6 = (0:0.01:N)/fc_6
 t_8 = (0:0.01:N)/fc_8
