@@ -29,7 +29,6 @@ newXAxis = linspace((-10 - halfWindowWidth), (+10 + halfWindowWidth), length(y))
 grid 'on';
 
 var_x = var(y)
-% var_noise = var_x ^ 2 / (10^(SNR/10))
 s = 10000;
 noise =  10*randn(1,2001)
 rect_with_noise = noise+y
