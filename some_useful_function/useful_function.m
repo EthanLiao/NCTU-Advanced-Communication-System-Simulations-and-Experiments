@@ -16,3 +16,8 @@ function y = add_awgn_noise(x,SNR_DB)
   end
   y = x + n
 end
+
+function sh_signal = shift(signal,shamt)
+  sh_signal = zeros(1,length(signal))
+  sh_signal(1+shamt:end) = signal(1+shamt:end)
+end
