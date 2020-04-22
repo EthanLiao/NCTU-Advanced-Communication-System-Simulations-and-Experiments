@@ -1,6 +1,11 @@
 # NCTU Advanced Communication System Simulations and Experiments
 ## Lab 1 MATLAB introduction
 - Practice 1 to 4
+    - Practice 1-2 : sinusoidal wave with different frequency
+    - Practice 3 : Padding with Signal
+    - Practice 4 : Rectangular Wave
+    - Practice 5 : Triangular Wave With AWGN
+
 ![](https://i.imgur.com/ns89wVG.png)
 
 
