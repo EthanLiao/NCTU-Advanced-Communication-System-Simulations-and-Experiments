@@ -1,4 +1,5 @@
 % practice 1
+
 clf;clear all;
 fc = 3              % nature frequency of sinusoidal wave
 N = 3               % number of sinusoidal wave
