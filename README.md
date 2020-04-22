@@ -1,15 +1,26 @@
 # NCTU Advanced Communication System Simulations and Experiments
 ## Lab 1 MATLAB introduction
-- Practice 1 to 4
+
+
+
+## Lab 2 Signals and the Fourier transform
+
+- Practice 1 to 5
     - Practice 1-2 : sinusoidal wave with different frequency
     - Practice 3 : Padding with Signal
     - Practice 4 : Rectangular Wave
     - Practice 5 : Triangular Wave With AWGN
 
-![](https://i.imgur.com/ns89wVG.png)
+![](https://i.imgur.com/iBafg1k.png)
 
+- HW1 : Sinusoidal Wave with High Sampling Frequency
 
-## Lab 2 Signals and the Fourier transform 
+![](https://i.imgur.com/RkoYbHM.png)
+
+- HW2 : Use Window to filter triangular wave noise
+
+![](https://i.imgur.com/JXhktbl.png)
+
 ## Lab 3 LTI systems and their responses 
 ## Lab 4 Analog modulation 
 ## Lab 5 Digital modulation 
