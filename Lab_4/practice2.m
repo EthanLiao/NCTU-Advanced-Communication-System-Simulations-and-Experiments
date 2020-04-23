@@ -1,4 +1,4 @@
-clf
+clf;clear all;
 fc_small = 1/4
 N = 256
 mid = ceil(N/2)
@@ -24,13 +24,6 @@ complex_carrier = carrier_cos_small + i*carrier_sin_small
 transmission_signal = real((m_1 + i*m_2) .* complex_carrier)
 
 
-
-% Design a high Pass Filter
-% b=1
-% a= poly([cos(4*pi*fc_small)+i*sin(4*pi*fc_small),cos(4*pi*fc_small)-i*sin(4*pi*fc_small)])
-% recieve_signal = filter(b, a, transmission_signal)
-
-
 % conduct a demodulation
 recieve_m = transmission_signal.*conj(complex_carrier)
 
@@ -44,8 +37,8 @@ recieve_m_tmp = filter(zero,pole,recieve_m)./ DC_gain(1)
 recieve_m_1 = real(recieve_m_tmp)
 recieve_m_2 = imag(recieve_m_tmp)
 
-subplot(7,1,1);plot(m_1,'.-');title('information');grid on;
-subplot(7,1,2);plot(m_2,'.-');title('cosine carrier');grid on;
+subplot(7,1,1);plot(m_1,'.-');title('information 1');grid on;
+subplot(7,1,2);plot(m_2,'.-');title('information 2');grid on;
 % conduct a modulation
 subplot(7,1,3);plot(m_1.*carrier_cos_small,'.-');title('modulation');grid on;
 subplot(7,1,4);plot(abs(fft(transmission_signal)),'.-');title('frequency transmission signal');grid on;

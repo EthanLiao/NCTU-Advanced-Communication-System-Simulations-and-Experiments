@@ -1,8 +1,3 @@
-function pad_array = pad(signal,zero_num)
-  pad_array = zeros(1,(length(signal)+2*zero_num))
-  pad_array((1+zero_num):(end-zero_num)) = signal(1:end)
-end
-
 function y = add_awgn_noise(x,SNR_DB)
   L = length(x)
   % calculate symbol energy
@@ -15,6 +10,11 @@ function y = add_awgn_noise(x,SNR_DB)
     n = (N0/2) * (randn(1,L)+i*randn(1,L))
   end
   y = x + n
+end
+
+function pad_array = pad(signal,zero_num)
+  pad_array = zeros(1,(length(signal)+2*zero_num))
+  pad_array((1+zero_num):(end-zero_num)) = signal(1:end)
 end
 
 function sh_signal = shift(signal,shamt)
