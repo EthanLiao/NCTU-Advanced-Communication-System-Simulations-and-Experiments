@@ -67,6 +67,17 @@ function delayed_signal = delay_version2(sig,delay_num)
   delayed_signal = [zeros(1,delay_num) sig]
 end
 
+% ------------Sampling Utility---------------------
+function down_sig = ADC(signal,down)
+  down_sig = zeros(1,length(signal))
+  down_sig = signal(1:down:end)
+end
+
+function up_sig = DAC(signal,up)
+  up_sig = zeros(1,up*length(signal))
+  up_sig(1:up:end) = signal
+end
+
 % -------------Modulation--------------------------
 function c_sig = PAMmod(sig)
   for i=1:length(sig)

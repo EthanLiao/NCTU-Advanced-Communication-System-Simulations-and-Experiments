@@ -1,24 +1,27 @@
-clf
+clf;clear all
+
 fc = 6
 down = 32
 up = 32
-N = 6 % number of sinusoid wave
-t = 0:0.01:(N)/(2*pi)
+N = 6
+t = (0:0.01:N)/(fc)
 origin_signal = cos(2*pi*fc*t)
-down_sampling_signal = origin_signal([1:down:length(origin_signal)])
-up_sampling_signal = zeros(1,up*length(origin_signal))
-up_sampling_signal([1:up:length(up_sampling_signal)]) = origin_signal
+load('./filter/FIR_LP')
 
+% up then filter it then down sample it
+
+down_sampling_signal = ADC(origin_signal,down)
 DAC_orig_signal = DAC(origin_signal,up)
+recover_signal = up.*ADC(filter(FIR_LP,DAC_orig_signal),down)
 
-[h,w] = freqz(FIR_LP,'whole',2001)
-FIR_DC_gain = 10.^(20*log10(abs(h))./20)
+% [h,w] = freqz(FIR_LP,'whole',2001)
+% FIR_DC_gain = 10.^(20*log10(abs(h))./20)
 
 
 subplot(3,2,1);stem(origin_signal);title('origin signal');grid on;
 subplot(3,2,2);stem(abs(fft(origin_signal)));title('origin signal');grid on;
-subplot(3,2,3);stem(ADC(32.*filter(FIR_LP,DAC_orig_signal),down));title('DMA_filter');grid on;
-subplot(3,2,4);stem(abs(fft(ADC(32.*filter(FIR_LP,DAC_orig_signal),down))));title('DMA_filter');grid on;
+subplot(3,2,3);stem(recover_signal);title('recover signal by DMA filter');grid on;
+subplot(3,2,4);stem(abs(fft(recover_signal)));title('DMA_filter');grid on;
 subplot(3,2,5);stem(down_sampling_signal);title('ADC signal');grid on;
 
 function DAC_sig = DAC(origin_signal,up_factor)
