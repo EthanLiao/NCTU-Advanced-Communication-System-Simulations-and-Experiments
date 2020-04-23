@@ -80,15 +80,40 @@
     ![](https://i.imgur.com/FTcu9Pn.png)
 
 - practice 3 : up then down sample a signal and use IIR and FIR filter to recover it
-    ![](https://i.imgur.com/M7AnQfC.png)
+    - cut-off = 0.4 
+    ![](https://i.imgur.com/KLYXMb2.png)
+    ![](https://i.imgur.com/xJPz7H0.png)
 
 
 - HW : dwon then up sample a signal and use IIR and FIR filter to recover it
-    ![](https://i.imgur.com/Ft0X6DN.png)
+    - cut-off = 0.5
+    ![](https://i.imgur.com/A2T9ZTx.png)
+    
+    ![](https://i.imgur.com/lhAbvGg.png)
 
+    ![](https://i.imgur.com/2dbn7BV.png)
+
+    ![](https://i.imgur.com/Ft0X6DN.png)
+    
     ![](https://i.imgur.com/5bXIEDG.png)
 
 ## [Lab 7 Transmit filtering/up conversion I ](https://github.com/EthanLiao/NCTU-Advanced-Communication-System-Simulations-and-Experiments/tree/master/Lab_7)
+   - practice 1 : plot raised cosine and square root cosine
+   ![](https://i.imgur.com/0mqpc5a.png)
+
+   - practice 2 : Conduct srrc pulse shapping
+    ![](https://i.imgur.com/QhMFxOl.png)
+    ![](https://i.imgur.com/lvBzA6d.png)
+    
+        ![](https://i.imgur.com/9GN31pO.png)
+
+   - practice 3 : Conduct filter pulse shapping
+       - cut-off frequency = 0.4
+       ![](https://i.imgur.com/m2DLyX4.png)
+       ![](https://i.imgur.com/4OQNi9S.png)
+
+   - HW : UP conversion:
+       ![](https://i.imgur.com/aApqECj.png)
 
 
 ## [Lab 8 Transmit filtering/up conversion II](https://github.com/EthanLiao/NCTU-Advanced-Communication-System-Simulations-and-Experiments/tree/master/Lab_8)
