@@ -3,14 +3,13 @@
 clf;clear all;
 fc = 3              % nature frequency of sinusoidal wave
 N = 3               % number of sinusoidal wave
-t = 0:0.01:N/fc
-
+t = (0:0.01:N)/fc
 signal_freq3 = cos(2*pi*fc*t)
 fft_signal_freq3 = abs(fft(signal_freq3 ))
 
 fc = 5
 N = 3
-t = 0:0.01:N/fc
+t = (0:0.01:N)/fc
 
 signal_freq5 = cos(2*pi*fc*t)
 fft_signal_freq5 = abs(fft(signal_freq5 ))

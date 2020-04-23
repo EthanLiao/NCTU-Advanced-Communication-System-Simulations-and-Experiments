@@ -1,14 +1,15 @@
 clf;clear all;
-M = 16 % modulation order
-k = log2(M) % modulation bits
-n = 2000 %number of symbol
-dataIn = randi([0 1],n,1) % generate a vector of data
-dataInTupple = reshape(dataIn,n/k,k) % generate a group of tupple data
-dataInSymbol = bi2de(dataInTupple) % transfer each tupple data into dec number
+M = 16                                      % modulation order
+k = log2(M)                                 % modulation bits
+n = 2000                                    % number of symbol
+dataIn = randi([0 1],n,1)                   % generate a vector of data
+dataInTupple = reshape(dataIn,n/k,k)        % generate a group of tupple data
+dataInSymbol = bi2de(dataInTupple)          % transfer each tupple data into dec number
 dataInSymbol = dataInSymbol.'
-Gray_dataIn_recieve = QAMmod(dataInSymbol) % project data point to the QAM
+Gray_dataIn_recieve = QAMmod(dataInSymbol)  % project data point to the QAM
 SNR = 0:5:100
 sym_err_array = zeros(1,length(SNR))
+
 for idx=1:length(SNR)
   Gray_signal_recieve = add_awgn_noise(Gray_dataIn_recieve,SNR(idx))
   dataSymbolsOut = QAMdemod(Gray_signal_recieve)
@@ -19,7 +20,6 @@ end
 
 % theoreitical symbol error rate
 theoSymBer = 3/2*erfc(sqrt(0.1*(10.^(SNR/10))))
-figure
 plot(SNR,theoSymBer,'b.-','LineWidth',2)
 hold on
 plot(SNR,sym_err_array,'mx-','Linewidth',1)
@@ -98,20 +98,16 @@ end
 
 
 
-function y = add_awgn_noise(x,SNR_dB)
- %y=awgn_noise(x,SNR) adds AWGN noise vector to signal 'x' to generate a
- %resulting signal vector y of specified SNR in dB
- rng('default');%set the random generator seed to default (for comparison only)
- L=length(x);
- SNR = 10^(SNR_dB/10); %SNR to linear scale
- Esym=sum(abs(x).^2)/(L); %Calculate actual symbol energy
- N0=Esym/SNR; %Find the noise spectral density
- if(isreal(x)),
- noiseSigma = sqrt(N0);%Standard deviation for AWGN Noise when x is real
- n = noiseSigma*randn(1,L);%computed noise
- else
- noiseSigma=sqrt(N0/2);%Standard deviation for AWGN Noise when x is complex
- n = noiseSigma*(randn(1,L)+1i*randn(1,L));%computed noise
- end
- y = x + n; %received signal
+function y = add_awgn_noise(x,SNR_DB)
+  L = length(x)
+  % calculate symbol energy
+  SNR = 10^(SNR_DB/10) % SNR enery to linear scale
+  SYME = sum(abs(x).^2) / L
+  N0 = SYME / SNR      % Noise spectral Density
+  if isreal(x)
+    n = sqrt(N0) * randn(1,L)
+  else
+    n = (N0/2) * (randn(1,L)+i*randn(1,L))
+  end
+  y = x + n
 end
