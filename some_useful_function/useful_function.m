@@ -26,6 +26,30 @@ dataInSymbol = bi2de(dataInTupple)          % transfer each tupple data into dec
 dataInSymbol = dataInSymbol.'
 Gray_dataIn_recieve = QAMmod(dataInSymbol)  % project data point to the QAM
 
+% SRRC Pulse
+function [y,t] = srrc_pulse(T,A,a)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% y = srrc_pulse(T, A, a)                                                       %
+% OUTPUT                                                                        %
+%      y: truncated SRRC pulse, with parameter T,                               %
+%                 roll-off factor a, and duration 2*A*T                         %
+%      t:   time axis of the truncated pulse                                    %
+% INPUT                                                                         %
+%      T:  Nyquist parameter or symbol period  (real number)                    %
+%      A:  half duration of the pulse in symbol periods (positive INTEGER)      %
+%      a:  roll-off factor (real number between 0 and 1)                        %
+%                                                                               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  t = [-A*T:A*T] + 10^(-8)
+  if (a>0 && a<=1)
+    num = cos((1+a)*pi*t./T) + T*sin((1-a)*pi*t./T)./(4*a*t)
+    denom = 1-(4*a*t./T).^2
+    y = 4*a/pi * num./denom
+  else
+    y = 1/T * sin(pi.*t./T) / (pi.*t./T)
+  end
+end
+
 % ------------- AWGN ------------------------------
 function y = add_awgn_noise(x,SNR_DB)
   L = length(x)
