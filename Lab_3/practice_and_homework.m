@@ -1,31 +1,31 @@
 clf;clear all;
-% % ------rectangular wave------
-% ele_nums = 1024
-% mid = ceil(ele_nums/2)
-% half = 10
-%
-% % rectangular pulse
-% x = zeros(1, ele_nums)
-% x(mid-half : mid+half) = 1
-%
-% % ------filter the wave------
-%
-% C = [1, -1.848, 1.000465]
-% % 補償項
-% y(1) = C(1) * x(1)
-% y(2) = C(1) * x(2) + C(2)*x(1)
-%
-% % 做convolution的項次
-% for n = 3:ele_nums
-%   y(n) = C(1) * x(n) + C(2)*x(n-1) + C(3)*x(n-2)
-% end
-%
-%
-% % ------plot the figure------
-% figure()
-% subplot(3,1,1);stem(rect,'.-');title('rectangular wave');grid on;
-% subplot(3,1,2);stem(y,'.-');title('response');grid on;
-% subplot(3,1,3);plot(abs(fft(y)),'.-');title('response');grid on;
+% ------rectangular wave------
+ele_nums = 1024
+mid = ceil(ele_nums/2)
+half = 10
+
+% rectangular pulse
+x = zeros(1, ele_nums)
+x(mid-half : mid+half) = 1
+
+% ------filter the wave------
+
+C = [1, -1.848, 1.000465]
+% 補償項
+y(1) = C(1) * x(1)
+y(2) = C(1) * x(2) + C(2)*x(1)
+
+% 做convolution的項次
+for n = 3:ele_nums
+  y(n) = C(1) * x(n) + C(2)*x(n-1) + C(3)*x(n-2)
+end
+
+
+% ------plot the figure------
+figure()
+subplot(3,1,1);stem(x,'.-');title('rectangular wave');grid on;
+subplot(3,1,2);stem(y,'.-');title('response');grid on;
+subplot(3,1,3);plot(abs(fft(y)),'.-');title('response');grid on;
 
 % practice 1 teacher's version
 % x = [1 2 3 4]
@@ -57,12 +57,12 @@ zero = poly(0.9959*[cos(pi*fc_6)+i*sin(pi*fc_6),cos(pi*fc_6)-i*sin(pi*fc_6)])
 pole = 1
 FIR_signal = filter(zero,pole,combined_signal)
 % IIR filter
-zero = poly([0.9959*(cos(pi*fc_6)+j*sin(pi*fc_6)),0.9959*(cos(pi*fc_6)-j*sin(pi*fc_6))])
-pole = poly([0.9*(cos(pi*fc_8)+j*sin(pi*fc_8)),0.9*(cos(pi*fc_8)-j*sin(pi*fc_8))])
+zero = poly([0.9959*(cos(2*pi*fc_6)+j*sin(pi*fc_6)),0.9959*(cos(2*pi*fc_6)-j*sin(pi*fc_6))])
+pole = poly([0.9*(cos(2*pi*fc_8)+j*sin(pi*fc_8)),0.9*(cos(2*pi*fc_8)-j*sin(pi*fc_8))])
 IIR_signal = filter(zero,pole,combined_signal)
 
-
-subplot(5,1,1);plot(delay(signal_8,31));title('original signal')
+figure()
+subplot(5,1,1);plot(delay(signal_8,13));title('original signal')
 subplot(5,1,2);plot(signal_6);title('another signal')
 subplot(5,1,3);plot(combined_signal);title('combined signal')
 subplot(5,1,4);plot(FIR_signal./0.37169);title('FIR filtered signal')
