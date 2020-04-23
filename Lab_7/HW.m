@@ -1,6 +1,6 @@
 N = 3
 fc = 1/6
-t = 0:0.001:N / fc
+t = (0:0.001:N )/ fc
 % ------ BPSK Signal-----------
 s0 = sin(2*pi*fc*t)
 s1 = sin(2*pi*fc*t+pi)
@@ -30,8 +30,6 @@ tt=T/99:T/99:(T*length(data))/2;
 % -----------------
 
 symbol_rate = 1*10^6
-% DAC_sampling_factor = 16*10^6/symbol_rate
-% DMA_sampling_factor = 32*10^6/symbol_rate
 DAC_sampling_factor = 64
 DMA_sampling_factor = 128
 carrier_frequency = 8*10^6
@@ -47,7 +45,6 @@ carrier = cos(2*pi*carrier_frequency*t)+i*sin(2*pi*carrier_frequency*t)
 signal_with_carrier = real(t_DMA_filtered_signal .* carrier)
 
 % demodulation
-
 demodulation_signal = signal_with_carrier .* conj(carrier)
 r_DMA_filtered_signal = ADC(conv(demodulation_signal,srrc),DMA_sampling_factor)
 r_Digital_filtered_signal = ADC(conv(r_DMA_filtered_signal,srrc),DAC_sampling_factor)./55.47.*1.4142
@@ -58,6 +55,7 @@ subplot(3,2,3);plot(t_Digital_filtered_signal);title('QPSK Pulse Shaping Signal'
 subplot(3,2,4);plot(abs(fft(t_Digital_filtered_signal)));title('QPSK Pulse Shaping Signal f domain');grid on;
 subplot(3,2,5);plot(real(r_Digital_filtered_signal));title('Recieved Signal');grid on;
 subplot(3,2,6);plot(abs(fft(real(r_Digital_filtered_signal))));title('Recieved Signal');grid on;
+
 function DAC_sig = DAC(origin_signal,up_factor)
 DAC_sig = zeros(1,up_factor*length(origin_signal))
 DAC_sig([1:up_factor:length(DAC_sig)]) = origin_signal

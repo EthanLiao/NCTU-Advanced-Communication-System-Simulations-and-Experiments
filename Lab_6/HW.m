@@ -1,20 +1,26 @@
-clf
-fc = 6
-down = 3
-N = 6 % number of sinusoid wave
-t = 0:0.01:(N)/(2*pi)
+clf;clear all;
+
 load('./filter/A1.mat')
 load('./filter/Recover_HW_Filter_5')
 origin_signal = a1.'
 % sound(origin_signal,8000)
 
-% [h,w] = freqz(Recover_HW_Filter_5,'whole',2001)
-% FIR_DC_gain = 10.^(20*log10(abs(h))./20)
+
+% Generate testing signal
+len = 50
+mid = ceil(len/2)
+half = 10
+rect = zeros(1,len)
+rect(mid-half:mid+half) = 1
+% origin_signal = conv(rect,rect)
 
 % down then up sample then filter it
 down_sampling_signal = ADC(origin_signal,down)
 up_sampling_signal = DAC(down_sampling_signal,down)
-recover_signal = filter(Recover_HW_Filter_5,up_sampling_signal).*down
+recover_signal = filter(Recover_HW_Filter_5,up_sampling_signal).*up
+
+
+
 
 % sound(recover_signal,8000)
 subplot(4,2,1);stem(origin_signal);title('origin signal');grid on;

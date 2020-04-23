@@ -7,8 +7,8 @@ s1 = sin(2*pi*fc*t+pi)
 % signal = [s0,s1]
 signal = [1,1,1,-1,1,-1,1,1,1]
 t_vec = [t t(end)+t]
-load('HW_filter')
-load('TEST')
+load('./filter/HW_filter')
+load('./fitler/TEST')
 symbol_rate = 1*10^6
 DAC_sampling_factor = (4*10^6)/symbol_rate
 DMA_sampling_factor = (32*10^6)/(4*10^6)

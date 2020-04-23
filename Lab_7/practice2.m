@@ -1,39 +1,33 @@
-clf
-% plot bpsk signal
-% t = 0:(1/1000):3
-% s0 = sin(2*pi*t)
-% s1 = sin(2*pi*t+pi)
-% sout = [s0,s1]
-% t_vector = [t t(end)+t]
-% rc = rcosdesign(0.55,5,4) % RC pulse
-delta_50 = zeros(1,100)
-delta_50(50) = 1
-load('FIR_distortion')
+clf;clear all
+
+% 2-1 : use two srrc pulse to get one rc channel
+load('./filter/FIR_distortion')
+% generate signal
 [signal,bit] = bpskd([1 0],2)
-delayed_signal = conv(signal,delta_50)
-[h,w] = freqz(FIR_distortion,'whole',2001)
-FIR_DC_gain = 10.^(20*log10(abs(h))./20)
-sout = filter(FIR_distortion,signal)./FIR_DC_gain(1)
 srrc = srrc_pulse(10, 1/10, 4, 0); %SRRC pulse
-
-
-plot(srrc)
-
+delayed_signal = delay(signal,50)
+% transmit signal
+sout = filter(FIR_distortion,signal)
 transmit_signal = conv(DAC(sout),srrc)
+% recieve signal
 recieve_signal = ADC(conv(transmit_signal,srrc))./34
-figure()
+
+
 plot(delayed_signal)
 hold on;plot(recieve_signal);grid on;title('Pratical SRRC Pulse Shapping signal')
 
-
-delta_25 = zeros(1,100)
-delta_25(25) = 1
-delayed_25_signal = conv(signal,delta_25)
+% 2-2 : use one raised cosine pulse to get one rc channel
+delayed_25_signal = delay(signal,25)
 rc = conv(srrc,srrc)
+% transmit and recieve signal
 rc_recieve_signal = ADC(conv(DAC(signal),rc))./31
 figure()
 plot(delayed_25_signal)
 hold on;plot(rc_recieve_signal);grid on;title('Non Pratical RC Pulse Shapping signal')
+
+function delay_sig = delay(sig,damt)
+  delay_sig = [zeros(1,damt) sig]
+end
 
 function ADC_sig = ADC(origin_signal)
 down = 32

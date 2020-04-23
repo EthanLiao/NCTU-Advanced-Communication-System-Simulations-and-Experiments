@@ -12,7 +12,7 @@ srrc_4 = srrc_pulse(4,5, 0.2)
 srrc_16 = srrc_pulse(16,5, 0.2)
 delta = zeros(1,40)
 delta(21) = 1
-load('practice_1_filter')
+load('./filter/practice_1_filter')
 t_Digital_filtered_signal = conv(DAC(signal,4),srrc_4)
 t_DMA_filtered_signal = conv(DAC(t_Digital_filtered_signal,4),srrc_16)
 channel_signal = add_awgn_noise(t_DMA_filtered_signal,NOISE_DB)

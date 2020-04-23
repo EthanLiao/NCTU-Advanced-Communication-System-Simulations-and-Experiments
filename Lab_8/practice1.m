@@ -7,7 +7,7 @@ s0 = sin(2*pi*fc*t)
 s1 = sin(2*pi*fc*t+pi)
 signal = [s0,s1]
 t_vec = [t t(end)+t]
-load('practice_1_filter')
+load('./filter/practice_1_filter')
 srrc = srrc_pulse(4, 1/10, 4, 0.2);
 Digital_filtered_signal = conv(DAC(signal,4),srrc)
 DMA_filtered_signal = DAC(Digital_filtered_signal,4)
