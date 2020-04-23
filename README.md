@@ -22,11 +22,11 @@
 ![](https://i.imgur.com/JXhktbl.png)
 
 ## Lab 3 LTI systems and their responses
-- practice 1 : designed IIR and FIR filter
-![](https://i.imgur.com/wKuGC7e.png)
+- practice 1 and homework : designed IIR and FIR filter
+![](https://i.imgur.com/rLZJUSD.png)
+![](https://i.imgur.com/tqvNTZs.png)
 
 
-- practice 2 : zero & pole combination filter
 ## Lab 4 Analog modulation 
 ## Lab 5 Digital modulation 
 ## Lab 6 Sampling and rate conversion 
