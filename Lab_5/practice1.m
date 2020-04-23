@@ -1,13 +1,12 @@
 clf;clear all;
-% 4PAM Mapping
+% 8-PAM Mapping
 M_PAM = 8
 x = (1:8)'
-% y = pammod(x,M_PAM,pi/2)
 y = PAMmod(x)
 scatterplot(y)
 text(real(y)+0.1,imag(y)-0.1,dec2bin(x))
 
-% 16 QAM Mapping
+% 16-QAM Mapping
 M_QAM = 16  % modulation order
 x = (0:15)' % generate a modulation symbol
 y = QAMmod(x)

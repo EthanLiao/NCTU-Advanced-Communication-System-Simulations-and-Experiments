@@ -16,6 +16,16 @@ rect(mid-half:mid+half) = 1
 tri_wave = conv(rect,rect)
 tri_wave_with_noise = add_awgn_noise(tri_wave,15)
 
+% Generate 16-QAM sequence
+M = 16                                      % modulation order
+k = log2(M)                                 % modulation bits
+n = 2000                                    % number of symbol
+dataIn = randi([0 1],n,1)                   % generate a vector of data
+dataInTupple = reshape(dataIn,n/k,k)        % generate a group of tupple data
+dataInSymbol = bi2de(dataInTupple)          % transfer each tupple data into dec number
+dataInSymbol = dataInSymbol.'
+Gray_dataIn_recieve = QAMmod(dataInSymbol)  % project data point to the QAM
+
 % ------------- AWGN ------------------------------
 function y = add_awgn_noise(x,SNR_DB)
   L = length(x)
