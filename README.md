@@ -112,12 +112,33 @@
        ![](https://i.imgur.com/m2DLyX4.png)
        ![](https://i.imgur.com/4OQNi9S.png)
 
-   - HW : UP conversion:
+   - HW : QPSK-UP conversion:
        ![](https://i.imgur.com/aApqECj.png)
+        ![](https://i.imgur.com/XJq1tgf.png)
 
-
+    
 ## [Lab 8 Transmit filtering/up conversion II](https://github.com/EthanLiao/NCTU-Advanced-Communication-System-Simulations-and-Experiments/tree/master/Lab_8)
+    
+- practice 1 : use SRRC as DAC and DMA filter
 
+
+![](https://i.imgur.com/evJlbEg.png)
+![](https://i.imgur.com/dR4AzAA.png)
+
+- practice 2 :
+![](https://i.imgur.com/z2EylfH.png)
+![](https://i.imgur.com/FQmiDdP.png)
+
+
+- practice 3 : design a IIR DMA filter then replace the previous problem DMA filter
+    - cut-off : 
+        - pass band :0.125 ; stop band : 0.4375
+    ![](https://i.imgur.com/uK8HQQt.png)
+
+- HW : 
+    - cut-off : 
+        - pass band :0.6 ; stop band : 0.825 ; Apass : 1 ; Astop: 60
+![](https://i.imgur.com/Z5AAMFP.png)
 
 ## [Lab 9 Receive filtering/down conversion](https://github.com/EthanLiao/NCTU-Advanced-Communication-System-Simulations-and-Experiments/tree/master/Lab_9)
 
