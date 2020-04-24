@@ -1,14 +1,16 @@
 clf;clear all;
 N = 3
 fc = 1/6
-t = 0:0.001:N / fc
-s0 = sin(2*pi*fc*t)
-s1 = sin(2*pi*fc*t+pi)
+% t = 0:0.001:N / fc
+% s0 = sin(2*pi*fc*t)
+% s1 = sin(2*pi*fc*t+pi)
 % signal = [s0,s1]
+% t_vec = [t t(end)+t]
+
 signal = [1,1,1,-1,1,-1,1,1,1]
-t_vec = [t t(end)+t]
-load('./filter/HW_filter')
-load('./fitler/TEST')
+
+
+load('./filter/TEST')
 symbol_rate = 1*10^6
 DAC_sampling_factor = (4*10^6)/symbol_rate
 DMA_sampling_factor = (32*10^6)/(4*10^6)
@@ -17,10 +19,6 @@ zero_freq = 1/40
 pole_freq = 1
 
 srrc = srrc_pulse(4, 11, 5, 0.2);
-
-zero = [0.028  0.053 0.071  0.053 0.028]
-pole = [1.000 -2.026 2.148 -1.159 0.279]
-
 
 
 % modulatoin part

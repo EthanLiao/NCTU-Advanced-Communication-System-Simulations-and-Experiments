@@ -1,20 +1,21 @@
 clf;clear all;
 N = 3
 fc = 1/6
-t = 0:0.001:N / fc
+t = (0:0.001:N)/ fc
 symbol_rate = 0.1
-s0 = sin(2*pi*fc*t)
-s1 = sin(2*pi*fc*t+pi)
-signal = [s0,s1]
-t_vec = [t t(end)+t]
+% s0 = sin(2*pi*fc*t)
+% s1 = sin(2*pi*fc*t+pi)
+% signal = [s0,s1]
+% t_vec = [t t(end)+t]
+signal = [-1,1,-1,1,1,1]
 load('./filter/practice_1_filter')
-srrc = srrc_pulse(4, 1/10, 4, 0.2);
+srrc = srrc_pulse(4 , 4, 0.2);
 Digital_filtered_signal = conv(DAC(signal,4),srrc)
-DMA_filtered_signal = DAC(Digital_filtered_signal,4)
-% DMA_filtered_signal = conv(DAC(Digital_filtered_signal,4),srrc)
+DMA_filtered_signal = DAC(Digital_filtered_signal,16)
 DMA_analog_signal = filter(practice_1_filter,DMA_filtered_signal)
-subplot(2,1,1);plot(signal);title('BPSK Signal');grid on;
-subplot(2,1,2);plot(DMA_analog_signal);title('Practical DAC');grid on;
+subplot(2,1,1);stem(signal);title('BPSK Signal');grid on;
+subplot(2,1,2);stem(DMA_analog_signal);title('Practical DAC');grid on;
+
 
 function DAC_sig = DAC(origin_signal,up_factor)
 DAC_sig = zeros(1,up_factor*length(origin_signal))
@@ -22,7 +23,7 @@ DAC_sig([1:up_factor:length(DAC_sig)]) = origin_signal
 end
 
 
-function [phi, t] = srrc_pulse(T, Ts, A, a)
+function [phi, t] = srrc_pulse(T, A, a)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % phi = srrc_pulse(T, Ts, A, a)                                                 %
 % OUTPUT                                                                        %
@@ -37,7 +38,7 @@ function [phi, t] = srrc_pulse(T, Ts, A, a)
 %      a:  roll-off factor (real number between 0 and 1)                        %
 %                                                                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-t = [-A*T:Ts:A*T] + 10^(-8); % in order to avoid division by zero problems at t=0.
+t = [-A*T:A*T] + 10^(-8); % in order to avoid division by zero problems at t=0.
 if (a>0 && a<=1)
    num = cos((1+a)*pi*t/T) + sin((1-a)*pi*t/T) ./ (4*a*t/T);
    denom = 1-(4*a*t./T).^2;

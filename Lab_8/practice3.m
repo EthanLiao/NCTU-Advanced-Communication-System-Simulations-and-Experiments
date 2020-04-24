@@ -3,26 +3,34 @@ N = 3
 fc = 1/6
 NOISE_DB = 100
 t = 0:0.001:N / fc
-s0 = sin(2*pi*fc*t)
-s1 = sin(2*pi*fc*t+pi)
+% s0 = sin(2*pi*fc*t)
+% s1 = sin(2*pi*fc*t+pi)
 % signal = [s0,s1]
+% t_vec = [t t(end)+t]
+
 signal = [1,-1,1,-1,-1,1,1,1,1]
-t_vec = [t t(end)+t]
+delay_signal = delay(signal,11)
+
 srrc_4 = srrc_pulse(4,5, 0.2)
 srrc_16 = srrc_pulse(16,5, 0.2)
-delta = zeros(1,40)
-delta(12) = 1
 load('./filter/practice_2_filter')
+
+% modulation
 t_Digital_filtered_signal = conv(DAC(signal,4),srrc_4)
 t_DMA_filtered_signal = filter(practice_2_filter,DAC(t_Digital_filtered_signal,4))
+% channel awgn
 channel_signal = add_awgn_noise(t_DMA_filtered_signal,NOISE_DB)
+% recieve signal
 r_DMA_filtered_signal = ADC(filter(practice_2_filter,channel_signal),4)
 r_Digital_filtered_signal = ADC(conv(r_DMA_filtered_signal,srrc_4),4)
 
-delay_signal = conv(signal,delta)
+
 stem(delay_signal./max(delay_signal));title('BPSK Signal');grid on;
-% subplot(3,1,2);plot(t_DMA_filtered_signal);title('Practical DAC');grid on;
 hold on;stem(r_Digital_filtered_signal./max(r_Digital_filtered_signal));grid on;
+
+function delay_sig = delay(sig,damt)
+  delay_sig = [zeros(1,damt) sig]
+end
 
 function DAC_sig = DAC(origin_signal,up_factor)
 DAC_sig = zeros(1,up_factor*length(origin_signal))
