@@ -9,7 +9,6 @@ fc = 1/6
 
 signal = [1,1,1,-1,1,-1,1,1,1]
 
-
 load('./filter/TEST')
 symbol_rate = 1*10^6
 DAC_sampling_factor = (4*10^6)/symbol_rate
