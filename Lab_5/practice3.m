@@ -7,7 +7,7 @@ dataInTupple = reshape(dataIn,n/k,k)        % generate a group of tupple data
 dataInSymbol = bi2de(dataInTupple)          % transfer each tupple data into dec number
 dataInSymbol = dataInSymbol.'
 Gray_dataIn_recieve = QAMmod(dataInSymbol)  % project data point to the QAM
-SNR = 10
+SNR = 15
 Gray_signal_recieve = add_awgn_noise(Gray_dataIn_recieve,SNR)
 dataSymbolsOut = QAMdemod(Gray_signal_recieve)
 err_array = dataSymbolsOut == dataInSymbol
