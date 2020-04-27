@@ -1,4 +1,4 @@
-clf;clear all;
+clf;clear all;close all;
 N = 3
 fc = 1/6
 % t = 0:0.001:N / fc
@@ -9,7 +9,7 @@ fc = 1/6
 
 signal = [1,1,1,-1,1,-1,1,1,1]
 
-load('./filter/TEST')
+load('./filter/TEST2')
 symbol_rate = 1*10^6
 DAC_sampling_factor = (4*10^6)/symbol_rate
 DMA_sampling_factor = (32*10^6)/(4*10^6)
@@ -22,7 +22,7 @@ srrc = srrc_pulse(4, 11, 5, 0.2);
 
 % modulatoin part
 t_Digital_filtered_signal = conv(DAC(signal,DAC_sampling_factor),srrc)
-t_DMA_filtered_signal = filter(TEST,DAC(t_Digital_filtered_signal,DMA_sampling_factor))
+t_DMA_filtered_signal = filter(TEST2,DAC(t_Digital_filtered_signal,DMA_sampling_factor))
 
 % modulatoin with carrier
 t = [0:length(t_DMA_filtered_signal)-1]
@@ -31,7 +31,7 @@ signal_with_carrier = real(t_DMA_filtered_signal .* carrier)
 
 % demodulation
 demodulation_signal = signal_with_carrier .* conj(carrier)
-r_DMA_filtered_signal = ADC(filter(TEST,demodulation_signal),DMA_sampling_factor)
+r_DMA_filtered_signal = ADC(filter(TEST2,demodulation_signal),DMA_sampling_factor)
 r_Digital_filtered_signal = ADC(conv(r_DMA_filtered_signal,srrc),DAC_sampling_factor)
 
 subplot(4,2,1);stem(signal);title('origin signal')
@@ -40,7 +40,7 @@ subplot(4,2,3);stem(DAC(t_Digital_filtered_signal,DMA_sampling_factor));title('t
 subplot(4,2,4);plot(abs(fft(DAC(t_Digital_filtered_signal,DMA_sampling_factor))));title('transmit signal f domain')
 subplot(4,2,5);stem(real(r_Digital_filtered_signal)./max(abs(real(r_Digital_filtered_signal))));title('receive signal')
 subplot(4,2,6);plot(abs(fft(real(r_Digital_filtered_signal))));title('receive signal f domain')
-subplot(4,2,7);stem(real(r_Digital_filtered_signal)./max(abs(real(r_Digital_filtered_signal))));hold on;stem(shift(signal,3));title('comparison two signal')
+subplot(4,2,7);stem(real(r_Digital_filtered_signal)./max(abs(real(r_Digital_filtered_signal))));hold on;stem(shift(signal,2));title('comparison two signal')
 
 
 function shift_signal = shift(signal,shift)
