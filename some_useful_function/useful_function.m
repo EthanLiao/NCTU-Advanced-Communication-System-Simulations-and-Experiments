@@ -198,3 +198,13 @@ function r_sig = QAMdemod(sig)
     r_sig(i) = x(argmin)                           % 以該指標值找出標準的16-QAM訊號
   end
 end
+
+
+function demod_sig = BPSK_demod(sig)
+  idx = abs(sig)>0.3
+  sig = sig(idx)
+  pos_arr = sig>0
+  neg_arr = sig<0
+  neg_arr = neg_arr*(-1)
+  demod_sig = pos_arr+neg_arr
+end

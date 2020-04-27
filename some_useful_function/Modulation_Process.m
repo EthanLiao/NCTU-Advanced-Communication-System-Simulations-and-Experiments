@@ -28,7 +28,7 @@ orig_sig_2 = triPulse .* carrier_sin
 
 tran_sig = orig_sig_1 + orig_sig_2
 
-% AWGN Channel
+% -------------AWGN Channel--------------
 awgn_sig = add_awgn_noise(tran_sig,SNR_db)
 
 % -------------Reciever------------------
