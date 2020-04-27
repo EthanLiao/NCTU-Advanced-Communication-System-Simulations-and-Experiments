@@ -1,16 +1,16 @@
-clf;clear all
+clf;clear all;close all
 
 % 2-1 : use two srrc pulse to get one rc channel
 load('./filter/FIR_distortion')
 % generate signal
 [signal,bit] = bpskd([1 0],2)
 srrc = srrc_pulse(10, 1/10, 4, 0); %SRRC pulse
-delayed_signal = delay(signal,50)
+delayed_signal = delay(signal,23)
 % transmit signal
 sout = filter(FIR_distortion,signal)
-transmit_signal = conv(DAC(sout),srrc)
+transmit_signal = conv(DAC(sout),srrc,'same')
 % recieve signal
-recieve_signal = ADC(conv(transmit_signal,srrc))./34
+recieve_signal = ADC(conv(transmit_signal,srrc,'same'))./34
 
 
 plot(delayed_signal)
