@@ -1,20 +1,23 @@
+clf;clear all; close all;
 N = 3
 fc = 1/6
 t = 0:0.001:N / fc
-s0 = sin(2*pi*fc*t)
-s1 = sin(2*pi*fc*t+pi)
-signal = [s0,s1]
-t_vec = [t t(end)+t]
+% s0 = sin(2*pi*fc*t)
+% s1 = sin(2*pi*fc*t+pi)
+% signal = [s0,s1]
+% t_vec = [t t(end)+t]
+signal = [-1,1,1,-1,1]
+load('IIR_filter')
 
 symbol_rate = 1*10^6
 DAC_sampling_factor = 16*10^6/symbol_rate
-DMA_sampling_factor = 32*10^6/symbol_rate
+DMA_sampling_factor = 32*10^6/(16*10^6)
 carrier_frequency = 8*10^6
-srrc = srrc_pulse(1/symbol_rate, 1/10, 4, 0);
+srrc = srrc_pulse(16, 11, 5, 0.3);
 
 % modulatoin part
 t_Digital_filtered_signal = conv(DAC(signal,DAC_sampling_factor),srrc)
-t_DMA_filtered_signal = conv(DAC(t_Digital_filtered_signal,DMA_sampling_factor),srrc)
+t_DMA_filtered_signal = filter(IIR_filter,DAC(t_Digital_filtered_signal,DMA_sampling_factor))
 
 % modulatoin with carrier
 t = [0:length(t_DMA_filtered_signal)-1]
@@ -22,21 +25,23 @@ carrier = cos(2*pi*carrier_frequency*t)+i*sin(2*pi*carrier_frequency*t)
 signal_with_carrier = real(t_DMA_filtered_signal .* carrier)
 
 % demodulation
-
 demodulation_signal = signal_with_carrier .* conj(carrier)
-r_DMA_filtered_signal = ADC(conv(demodulation_signal,srrc),DMA_sampling_factor)
-r_Digital_filtered_signal = ADC(conv(r_DMA_filtered_signal,srrc),DAC_sampling_factor)
+r_DMA_filtered_signal = ADC(filter(IIR_filter,demodulation_signal),DMA_sampling_factor)
+r_Digital_filtered_signal = real(ADC(conv(r_DMA_filtered_signal,srrc),DAC_sampling_factor))
 
-subplot(2,1,1);plot(signal);title('BPSK Signal');grid on;
-% subplot(2,1,2);plot(DMA_filtered_signal);title('Practical DAC');grid on;
-subplot(2,1,2);plot(real(r_Digital_filtered_signal));title('Recieved Signal');grid on;
+stem(delay(signal,1));title('BPSK Signal');grid on;
+hold on;stem(r_Digital_filtered_signal./max(abs(r_Digital_filtered_signal)));title('Recieved Signal');grid on;
 
+function delay_sig = delay(orig_sig,damt)
+  delay_sig = [zeros(1,damt) orig_sig]
+end
 function DAC_sig = DAC(origin_signal,up_factor)
 DAC_sig = zeros(1,up_factor*length(origin_signal))
-DAC_sig([1:up_factor:length(DAC_sig)]) = origin_signal
+DAC_sig([1:up_factor:end]) = origin_signal
 end
 
 function ADC_sig = ADC(origin_signal,down_factor)
+ADC_sig = zeros(1,length(origin_signal))
 ADC_sig = origin_signal([1:down_factor:length(origin_signal)])
 end
 

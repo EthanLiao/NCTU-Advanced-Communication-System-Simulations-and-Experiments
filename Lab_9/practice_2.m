@@ -1,25 +1,17 @@
+clf;clear all; close all;
 N = 3
 fc = 1/6
-% t = 0:0.001:N / fc
-% s0 = sin(2*pi*fc*t)
-% s1 = sin(2*pi*fc*t+pi)
-% signal = [s0,s1]
-% t_vec = [t t(end)+t]
+t = 0:0.001:N / fc
+signal = [-1,1,1,-1,1]
+load('IIR_filter')
 
-signal = [1,1,1,-1,1,-1,1,1,1]
-
-% load('./filter/TEST2')
 symbol_rate = 1*10^6
-DAC_sampling_factor = (4*10^6)/symbol_rate
-DMA_sampling_factor = (32*10^6)/(4*10^6)
 carrier_frequency = 8*10^6
-
-srrc = srrc_pulse(4, 11, 5, 0.2);
-
+srrc = srrc_pulse(32, 11, 5, 0.3);
 
 % modulatoin part
-t_Digital_filtered_signal = conv(DAC(signal,DAC_sampling_factor),srrc)
-t_DMA_filtered_signal = filter(TEST2,DAC(t_Digital_filtered_signal,DMA_sampling_factor))
+t_Digital_filtered_signal = conv(DAC(signal,16),srrc,'same')
+t_DMA_filtered_signal = filter(IIR_filter,DAC(t_Digital_filtered_signal,2))
 
 % modulatoin with carrier
 t = [0:length(t_DMA_filtered_signal)-1]
@@ -28,30 +20,24 @@ signal_with_carrier = real(t_DMA_filtered_signal .* carrier)
 
 % demodulation
 demodulation_signal = signal_with_carrier .* conj(carrier)
-r_DMA_filtered_signal = ADC(filter(TEST2,demodulation_signal),DMA_sampling_factor)
-r_Digital_filtered_signal = ADC(conv(r_DMA_filtered_signal,srrc),DAC_sampling_factor)
+r_Digital_filtered_signal = real(ADC(filter(IIR_filter,demodulation_signal),16))
 
-subplot(4,2,1);stem(signal);title('origin signal')
-subplot(4,2,2);plot(abs(fft(signal)));title('origin signal f domain')
-subplot(4,2,3);stem(DAC(t_Digital_filtered_signal,DMA_sampling_factor));title('transmit signal')
-subplot(4,2,4);plot(abs(fft(DAC(t_Digital_filtered_signal,DMA_sampling_factor))));title('transmit signal f domain')
-subplot(4,2,5);stem(real(r_Digital_filtered_signal)./max(abs(real(r_Digital_filtered_signal))));title('receive signal')
-subplot(4,2,6);plot(abs(fft(real(r_Digital_filtered_signal))));title('receive signal f domain')
-subplot(4,2,7);stem(real(r_Digital_filtered_signal)./max(abs(real(r_Digital_filtered_signal))));hold on;stem(shift(signal,2));title('comparison two signal')
+recieve_signal = r_Digital_filtered_signal./max(abs(r_Digital_filtered_signal))
+r_signal = (recieve_signal>0.3)+(-(recieve_signal<-0.3))
 
+subplot(2,1,1);stem(delay(signal,0));title('BPSK Signal');grid on;
+subplot(2,1,2);stem(ADC(r_signal,2));title('Recieved Signal');grid on;
 
-function shift_signal = shift(signal,shift)
-  shift_signal = [zeros(1,shift-1) signal]
+function delay_sig = delay(orig_sig,damt)
+  delay_sig = [zeros(1,damt) orig_sig]
 end
-
-% subplot(3,2,5);stem(r_Digital_filtered_signal./max(abs(r_Digital_filtered_signal)));title('receive signal')
-% subplot(3,2,6);plot(abs(fft(r_Digital_filtered_signal./max(r_Digital_filtered_signal))));title('receive signal f domain')
 function DAC_sig = DAC(origin_signal,up_factor)
 DAC_sig = zeros(1,up_factor*length(origin_signal))
-DAC_sig([1:up_factor:length(DAC_sig)]) = origin_signal
+DAC_sig([1:up_factor:end]) = origin_signal
 end
 
 function ADC_sig = ADC(origin_signal,down_factor)
+ADC_sig = zeros(1,length(origin_signal))
 ADC_sig = origin_signal([1:down_factor:length(origin_signal)])
 end
 

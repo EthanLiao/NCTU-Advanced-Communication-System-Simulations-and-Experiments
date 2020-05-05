@@ -81,9 +81,9 @@ function y = add_awgn_noise(x,SNR_DB)
   SYME = sum(abs(x).^2)/L
   N0 = SYME/L
   if isreal(x)
-    n = N0 * randn(1,L)
+    n = sqrt(N0) * randn(1,L)
   else
-    n = (N0/2) * (randn(1,L)+i*randn(1,L))
+    n = sqrt(N0/2) * (randn(1,L)+i*randn(1,L))
   end
   y = x+n
 end
