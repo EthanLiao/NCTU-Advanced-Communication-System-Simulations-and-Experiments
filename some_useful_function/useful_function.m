@@ -60,7 +60,7 @@ function y = add_awgn_noise(x,SNR_DB)
   if isreal(x)
     n = sqrt(N0) * randn(1,L)
   else
-    n = (N0/2) * (randn(1,L)+i*randn(1,L))
+    n = sqrt(N0/2) * (randn(1,L)+i*randn(1,L))
   end
   y = x + n
 end
