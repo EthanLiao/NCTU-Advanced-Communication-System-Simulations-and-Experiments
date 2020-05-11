@@ -12,13 +12,15 @@ f_DAC = 16
 f_DMA = 4
 SNR_DB = 0.01
 
+f_noise = 0.4
+
 srrc_16 = srrc_pulse(16, 5, 0.3);
 srrc_4 = srrc_pulse(4,5,0.3)
 
 srrc_16_length = length(srrc_16)
 srrc_4_length = length(srrc_4)
 
-load('IIR_filter')
+load('IIR_64_filter')
 load('clr_filter')
 % modulatoin part
 t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16)
@@ -27,7 +29,7 @@ t_DAC_sig = t_DAC_sig((srrc_16_length-1)/2+1:end-(srrc_16_length-1)/2)
 t_DMA_ana_sig = conv(DAC(t_DAC_sig,f_DMA),srrc_4)
 t_DMA_ana_sig = t_DMA_ana_sig((srrc_4_length-1)/2+1:end-(srrc_4_length-1)/2)
 
-t_DMA_sig = filter(IIR_filter,t_DMA_ana_sig)
+t_DMA_sig = filter(IIR_64_filter,t_DMA_ana_sig)
 
 % modulatoin with carrier
 t = [0:length(t_DMA_sig)-1]
@@ -36,14 +38,17 @@ sig_with_carrier = real(t_DMA_sig .* carrier)
 
 awgn_sig = add_awgn_noise(sig_with_carrier,SNR_DB)
 
+t = [0:length(awgn_sig)-1]
+sig_noise = cos(2*pi*f_noise*t)
 % Image rejection Filter
-
-clear_sig = filter(clr_filter,awgn_sig)
+dirty_sig = awgn_sig+sig_noise
+clear_sig = filter(clr_filter,dirty_sig)
 
 % IF Band
 t_vec = [1:length(clear_sig)]
 carrier = cos(2*pi*(carrier_frequency-IF_frequency)/freq_DMA*t_vec)
 IF_sig = clear_sig .* carrier
+IF_dirty_sig = dirty_sig.*carrier
 r_DMA_f_sig = conv(IF_sig,srrc_4)
 r_DMA_f_sig = r_DMA_f_sig((srrc_4_length-1)/2+1:end-(srrc_4_length-1)/2)
 r_DMA_sig = ADC(r_DMA_f_sig,f_DMA)
@@ -61,10 +66,12 @@ r_ADC_sig = ADC(r_ADC_f_sig,f_DAC)
 r_sig = r_ADC_sig./max(abs(r_ADC_sig))
 rcv_sig = (r_sig>0) + (-(r_sig<0))
 
-subplot(2,1,1);stem(sig);title('BPSK Signal');grid on;
-subplot(2,1,2);stem(rcv_sig);title('Recieved Signal');grid on;
-figure()
-plot(abs(fft(demod_sig)))
+subplot(3,2,1);stem(sig);title('Transmitting Signal');grid on;
+subplot(3,2,2);plot(abs(fft(sig)));title('Transmitting Signal fdomain');grid on;
+subplot(3,2,3);stem(IF_dirty_sig);title('IF Band Interference Signal');grid on;
+subplot(3,2,4);plot(abs(fft(IF_dirty_sig)));title('IF Band Interference Signal fdomain');grid on;
+subplot(3,2,5);stem(rcv_sig);title('Recieved Signal');grid on;
+subplot(3,2,6);plot(abs(fft(rcv_sig)));title('Recieved Signal fdomain');grid on;
 
 function DAC_sig = DAC(origin_sig,up_factor)
   DAC_sig = zeros(1,up_factor*length(origin_sig))
