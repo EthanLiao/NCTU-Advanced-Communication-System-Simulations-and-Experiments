@@ -30,13 +30,14 @@ transmission_signal = real((m_1 + i*m_2) .* complex_carrier)
 
 
 % compensation
-H = [1 0 -g * sin(imbalance_phi) g * cos(imbalance_phi)]
-H = reshape(H,2,2)
-% todo : transmission_signal to aIE aQE
+
+
 aIE = m_1 - g * sin(imbalance_phi) .* m_2
 aQE = g * cos(imbalance_phi) .* m_2
-%
 imbalance_signal = [aIE;aQE]
+
+H = [1 0 -g * sin(imbalance_phi) g * cos(imbalance_phi)]
+H = reshape(H,2,2)
 recieve_m = inv(H) * imbalance_signal
 
 % conduct a demodulation
