@@ -1,4 +1,4 @@
-clf
+clf;clear all;close all;
 fc_small = 1/4
 N = 256
 mid = ceil(N/2)
@@ -13,8 +13,6 @@ carrier_sin_small_im = sqrt(2)*sin(2*pi*fc_small*time+imbalance_phi)*g
 
 m_1 = zeros(1, N)
 m_1(mid-half+1 : mid+half) = 1
-
-
 
 tri_pulse = conv(m_1,m_1)
 m_1 = tri_pulse

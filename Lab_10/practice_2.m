@@ -1,4 +1,5 @@
-clf
+clf;clear all;close all;
+
 fc_small = 1/4
 N = 256
 mid = ceil(N/2)

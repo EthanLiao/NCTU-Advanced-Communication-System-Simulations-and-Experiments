@@ -1,49 +1,96 @@
-clf
-fc_small = 1/4
-N = 256
-mid = ceil(N/2)
-half = 128
-time = [1:2*N-1]
-delta_f = 10
-% modulation process
-carrier_sin_small = sqrt(2)*sin(2*pi*fc_small*time)
-carrier_cos_small = sqrt(2)*cos(2*pi*fc_small*time)
-carrier_sin_small_cfo = sqrt(2)*sin(2*pi*(fc_small+delta_f)*time)
-carrier_cos_small_cfo = sqrt(2)*cos(2*pi*(fc_small+delta_f)*time)
+clf;clear all; close all;
 
-m_1 = zeros(1, N)
-m_1(mid-half+1 : mid+half) = 1
+N = 10
+sig = randi([0,1],1,N)
+sig((sig==0)) = -1
 
+load('IIR_filter')
 
-
-tri_pulse = conv(m_1,m_1)
-m_1 = tri_pulse
-m_2 = zeros(1, 2*N-1)
-m_2(mid-half+1 : mid+half) = 1
-
-% Go through the channel
-complex_carrier = carrier_cos_small + i*carrier_sin_small
-transmission_signal = real((m_1 + i*m_2) .* complex_carrier)
+symbol_rate = 1*10^6
+carrier_frequency = 8*10^6
+delta_f = 3
+srrc_16 = srrc_pulse(16, 11, 5, 0.3);
+srrc_2 = srrc_pulse(2,11,5,0.3)
+srrc_16_length = length(srrc_16)
+srrc_2_length = length(srrc_2)
+freq_DAC = 16*10^6
+freq_DMA = 32*10^6
+f_DAC = 16
+f_DMA = 2
 
 
-% conduct a demodulation
-recieve_m = transmission_signal.*conj(carrier_cos_small_cfo + i*carrier_sin_small_cfo)
+% modulatoin part
+t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16)
+t_DAC_sig = t_DAC_sig((srrc_16_length-1)/2+1:end-(srrc_16_length-1)/2)
 
-% Design a Low Pass Filter
-pole= 1
-zero= poly([cos(4*fc_small*pi)+i*sin(4*fc_small*pi),cos(4*fc_small*pi)-i*sin(4*fc_small*pi)])
+t_DMA_ana_sig = conv(DAC(t_DAC_sig,f_DMA),srrc_2)
+t_DMA_ana_sig = t_DMA_ana_sig((srrc_2_length-1)/2+1:end-(srrc_2_length-1)/2)
 
-[h,w] = freqz(zero,pole,'whole',2001)
-DC_gain = 10.^(20*log10(abs(h))./20)
-recieve_m_tmp = filter(zero,pole,recieve_m)./ DC_gain(1)
-recieve_m_1 = real(recieve_m_tmp)
-recieve_m_2 = imag(recieve_m_tmp)
+t_DMA_sig = filter(IIR_filter,t_DMA_ana_sig)
 
-subplot(3,2,1);plot(m_1,'.-');title('information 1');grid on;
-subplot(3,2,2);plot(m_2,'.-');title('information 2');grid on;
-% conduct a modulation
-subplot(3,2,3);plot(abs(fft(transmission_signal)),'.-');title('frequency transmission signal');grid on;
-% go through the channel
-subplot(3,2,4);plot(abs(fft(recieve_m)),'.-');title('frequency transmission signal');grid on;
-subplot(3,2,5);plot(recieve_m_1,'.-');title('recieve information 1');grid on;
-subplot(3,2,6);plot(recieve_m_2,'.-');title('recieve information 2');grid on;
+% modulatoin with carrier
+t = [0:length(t_DMA_sig)-1]
+carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency*t)
+sig_with_carrier = real(t_DMA_sig .* carrier)
+
+carrier = sqrt(2)*exp(1j*2*pi*(carrier_frequency+delta_f)*t)
+% demodulation
+demod_sig = sig_with_carrier .* conj(carrier)
+
+r_ADC_sig = ADC(filter(IIR_filter,demod_sig),32)
+
+rcv_sig = real(r_ADC_sig./ max(abs(r_ADC_sig)))
+rcv_sig = [rcv_sig(2:end) sig(10)]
+
+
+% detection
+% r_sig = (rcv_sig>0)+(-(rcv_sig<0))
+
+
+subplot(2,1,1);stem(sig);title('BPSK Signal');grid on;
+subplot(2,1,2);stem(rcv_sig);title('Recieved Signal');grid on;
+
+function delay_sig = delay(orig_sig,damt)
+  delay_sig = [zeros(1,damt) orig_sig]
+end
+
+function DAC_sig = DAC(origin_sig,up_factor)
+  DAC_sig = zeros(1,up_factor*length(origin_sig))
+  DAC_sig(1:up_factor:end) = origin_sig
+end
+
+function ADC_sig = ADC(origin_sig,down_factor)
+  ADC_sig = zeros(1,length(origin_sig))
+  ADC_sig = origin_sig(1:down_factor:end)
+end
+
+function phi = srrc_pulse(T, Ts, A, a)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% phi = srrc_pulse(T, Ts, A, a)                                                 %
+% OUTPUT                                                                        %
+%      phi: truncated SRRC pulse, with parameter T,                             %
+%                 roll-off factor a, and duration 2*A*T                         %
+%      t:   time axis of the truncated pulse                                    %
+% INPUT                                                                         %
+%      T:  Nyquist parameter or symbol period  (real number)                    %
+%      Ts: sampling period  (Ts=T/over)                                         %
+%                where over is a positive INTEGER called oversampling factor    %
+%      A:  half duration of the pulse in symbol periods (positive INTEGER)      %
+%      a:  roll-off factor (real number between 0 and 1)                        %
+%                                                                               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  t = [-A*T:Ts:A*T] + 10^(-8); % in order to avoid division by zero problems at t=0.
+  if (a>0 && a<=1)
+     num = cos((1+a)*pi*t/T) + sin((1-a)*pi*t/T) ./ (4*a*t/T);
+     denom = 1-(4*a*t/T).^2;
+     phi = 4*a/pi * num ./ denom;
+     phi = phi /max(phi)
+  elseif (a==0)
+     phi = 1/(sqrt(T)) * sin(pi*t/T)./(pi*t/T);
+     phi = phi /max(phi)
+  else
+      phi = zeros(length(t),1);
+      disp('Illegal value of roll-off factor')
+      return
+  end
+end
