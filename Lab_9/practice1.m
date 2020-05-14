@@ -4,13 +4,14 @@ N = 10
 sig = randi([0,1],1,N)
 sig((sig==0)) = -1
 
-load('IIR_filter')
+load('./filter/IIR_filter')
 
 symbol_rate = 1*10^6
 carrier_frequency = 8*10^6
 
-srrc_16 = srrc_pulse(16, 11, 5, 0.3);
+srrc_16 = srrc_pulse(16, 11, 5, 0.3)
 srrc_2 = srrc_pulse(2,11,5,0.3)
+
 srrc_16_length = length(srrc_16)
 srrc_2_length = length(srrc_2)
 
@@ -62,33 +63,13 @@ function ADC_sig = ADC(origin_sig,down_factor)
   ADC_sig = origin_sig(1:down_factor:end)
 end
 
-function phi = srrc_pulse(T, Ts, A, a)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% phi = srrc_pulse(T, Ts, A, a)                                                 %
-% OUTPUT                                                                        %
-%      phi: truncated SRRC pulse, with parameter T,                             %
-%                 roll-off factor a, and duration 2*A*T                         %
-%      t:   time axis of the truncated pulse                                    %
-% INPUT                                                                         %
-%      T:  Nyquist parameter or symbol period  (real number)                    %
-%      Ts: sampling period  (Ts=T/over)                                         %
-%                where over is a positive INTEGER called oversampling factor    %
-%      A:  half duration of the pulse in symbol periods (positive INTEGER)      %
-%      a:  roll-off factor (real number between 0 and 1)                        %
-%                                                                               %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  t = [-A*T:Ts:A*T] + 10^(-8); % in order to avoid division by zero problems at t=0.
+function [y,t] = srrc_pulse(T,A,a)
+  t = [-A*T:A*T] + 10^(-8)
   if (a>0 && a<=1)
-     num = cos((1+a)*pi*t/T) + sin((1-a)*pi*t/T) ./ (4*a*t/T);
-     denom = 1-(4*a*t/T).^2;
-     phi = 4*a/pi * num ./ denom;
-     phi = phi /max(phi)
-  elseif (a==0)
-     phi = 1/(sqrt(T)) * sin(pi*t/T)./(pi*t/T);
-     phi = phi /max(phi)
+    num = cos((1+a)*pi*t/T) + T*sin((1-a)*pi*t/T)./(4*a*t)
+    denom = 1-(4*a*t/T).^2
+    y = 4*a/pi * num./denom
   else
-      phi = zeros(length(t),1);
-      disp('Illegal value of roll-off factor')
-      return
+    y = 1/T * sin(pi.*t./T) ./ (pi*t./T)
   end
 end

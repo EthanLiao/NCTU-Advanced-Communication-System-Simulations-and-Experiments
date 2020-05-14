@@ -4,24 +4,29 @@ clf;clear all; close all;
 N = 1000;
 sig = sign(randn(1,N))+j*sign(randn(1,N));
 
+
 load('IIR_filter');
 
-fc = 16*10^6;
-fs = 64*10^6;
+fc = 8*10^6;
+fs = 32*10^6;
+fi = 4*10^6;
 f_DAC = 16;
 f_DMA = 4;
+freq_DAC = 16*10^6;
+freq_DMA = 64*10^6;
 g = 1.5;
-phi = pi/3;
-group_delay = 3;
+phi = pi /3;
+group_delay = 8;
+ISREAL = true; % indicator for real signal
 
 srrc_16 = srrc_pulse(16,5,0.3);
+srrc_4 = srrc_pulse(16,5,0.3);
 
-srrc_16_len = length(srrc_16);
-
+% trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
 mod_sig_real = trans_branch(real(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay);
 mod_sig_imag = trans_branch(imag(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay);
 
-% modulatoin with carrier
+% modulatoin with carrier;
 t = [0:length(mod_sig_real)-1];
 carrier_cos = sqrt(2)*cos(2*pi*fc/fs*t);
 carrier_sin = sqrt(2)*sin(2*pi*fc/fs*t);
@@ -29,10 +34,8 @@ carrier_sin_im = sqrt(2)*sin(2*pi*fc/fs*t+phi)*g;
 
 
 % compensation
-aIE = mod_sig_real - g * sin(phi) .* mod_sig_imag;
-aQE = g * cos(phi) .* mod_sig_imag;
-% aIE = mod_sig_real
-% aQE = mod_sig_imag
+aIE = mod_sig_real;
+aQE = mod_sig_imag;
 
 imbalance_signal = [aIE;aQE];
 H = [1 -g*sin(phi) ; 0 g*cos(phi)];
@@ -43,19 +46,19 @@ im_sig_real = compensate_sig(1,:);
 im_sig_imag = compensate_sig(2,:);
 sig_with_carrier = im_sig_real.*carrier_cos+im_sig_imag.*(-carrier_sin);
 
-% demodulation
-demod_sig_real = sig_with_carrier .* carrier_cos;
-demod_sig_imag = sig_with_carrier .* (-carrier_sin);
 
-rcv_sig_real = recieve_branch(demod_sig_real,f_DMA,IIR_filter,f_DAC,srrc_16,group_delay);
-rcv_sig_imag = recieve_branch(demod_sig_imag,f_DMA,IIR_filter,f_DAC,srrc_16,group_delay);
+% IF_reciever(sig_with_carrier,fc,fi,f_DMA,f_DAC,freq_DMA,freq_DAC,IIR_filter,srrc_DMA,srrc_DAC)
+rcv_sig_real = IF_reciever(sig_with_carrier,ISREAL,group_delay,fc,fi,f_DMA,f_DAC,freq_DMA,freq_DAC,IIR_filter,srrc_16,srrc_16);
+rcv_sig_imag = IF_reciever(sig_with_carrier,~ISREAL,group_delay,fc,fi,f_DMA,f_DAC,freq_DMA,freq_DAC,IIR_filter,srrc_16,srrc_16);
 
-rcv_sig = rcv_sig_real+j*rcv_sig_imag;
 
-figure();
-subplot(2,1,1);stem(real(sig));hold on;stem(rcv_sig_real);title('QPSK Real Signal');grid on;
-subplot(2,1,2);stem(imag(sig));hold on;stem(rcv_sig_imag);title('QPSK Image Signal');grid on;
+% generate signal for comparison
+alpha =  1/2*(1+g*exp(j*phi));
+beta = 1/2*(1-g*exp(j*phi));
+compar_sig = alpha * sig + beta * conj(sig);
 
+
+rcv_sig = rcv_sig_real+ j*rcv_sig_imag;
 original_sig = scatterplot(sig,1,0,'b.');
 hold on;
 scatterplot(rcv_sig*2.5,1,0,'k*',original_sig);
@@ -76,11 +79,44 @@ function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_de
   f_sig = filter(IIR_filter,demod_sig);
   f_sig = f_sig(group_delay:end);
   r_DMA_sig = ADC(f_sig,f_DMA);
+
   r_DAC_sig = conv(r_DMA_sig,srrc);
-  L = length(srrc)
+  L = length(srrc);
   r_DAC_sig = r_DAC_sig((L-1)/2+1:end-(L-1)/2);
   r_DAC_sig = r_DAC_sig / max(abs(r_DAC_sig));
   rcv_sig = ADC(r_DAC_sig,f_DAC);
+end
+
+function rcv_sig = IF_reciever(sig_with_carrier,ISREAL,group_delay,fc,fi,f_DMA,f_DAC,freq_DMA,freq_DAC,IIR_filter,srrc_DMA,srrc_DAC)
+  % IF Band
+  srrc_DAC_length = length(srrc_DAC);
+
+  t = [0:length(sig_with_carrier)-1];
+  carrier = cos(2*pi*(fc-fi)/freq_DMA*t);
+
+  IF_sig = sig_with_carrier .* carrier;
+  r_DMA_sig = filter(IIR_filter,IF_sig);
+  r_DMA_sig = r_DMA_sig(group_delay:end);
+  r_DMA_sig = ADC(r_DMA_sig,f_DMA);
+
+  % demodulatoin with carrier
+  t = [0:length(r_DMA_sig)-1];
+  phase_shift = exp(1j*2*pi*fi/freq_DAC*t);
+  carrier = exp(-1j*2*pi*fi/freq_DAC*t);
+  demod_sig = 0;
+  if ISREAL
+    demod_sig = real(r_DMA_sig .* carrier);
+    % demod_sig = r_DMA_sig * sqrt(2) .* cos(2*pi*fi/freq_DAC*t)
+  else
+    demod_sig = imag(r_DMA_sig .* carrier);
+    % demod_sig = r_DMA_sig .* (-sqrt(2) .* sin(2*pi*fi/freq_DAC*t))
+  end
+  % demodulation
+  r_ADC_f_sig = conv(demod_sig,srrc_DAC);
+  r_ADC_f_sig = r_ADC_f_sig((srrc_DAC_length-1)/2+1:end-(srrc_DAC_length-1)/2);
+  rcv_sig = ADC(r_ADC_f_sig,f_DAC);
+  rcv_sig = rcv_sig/max(rcv_sig);
+
 end
 
 function DAC_sig = DAC(origin_sig,up_factor)

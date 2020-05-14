@@ -17,7 +17,7 @@ srrc_2 = srrc_pulse(2,5,0.3)
 srrc_16_length = length(srrc_16)
 srrc_2_length = length(srrc_2)
 
-load('IIR_filter')
+load('./filter/IIR_filter')
 
 % modulatoin part
 t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16)
@@ -44,7 +44,7 @@ r_DMA_sig = ADC(r_DMA_f_sig,f_DMA)
 
 % demodulatoin with carrier
 t = [0:length(r_DMA_sig)-1]
-carrier = exp(-1j*2*pi*IF_frequency/freq_DAC*t)
+carrier = exp(-1j*(2*pi*IF_frequency/freq_DAC*t+pi))
 demod_sig = real(r_DMA_sig .* carrier)
 
 % demodulation

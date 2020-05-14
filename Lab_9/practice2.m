@@ -4,7 +4,7 @@ N = 10
 sig = randi([0,1],1,N)
 sig((sig==0)) = -1
 
-load('IIR_filter')
+load('./filter/IIR_filter')
 
 symbol_rate = 1*10^6
 carrier_frequency = 8*10^6
