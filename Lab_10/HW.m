@@ -14,8 +14,8 @@ f_DAC = 16;
 f_DMA = 4;
 freq_DAC = 16*10^6;
 freq_DMA = 64*10^6;
-g = 1.5;
-phi = pi /3;
+g = 1;
+phi = 0;
 group_delay = 8;
 ISREAL = true; % indicator for real signal
 
@@ -57,8 +57,9 @@ alpha =  1/2*(1+g*exp(j*phi));
 beta = 1/2*(1-g*exp(j*phi));
 compar_sig = alpha * sig + beta * conj(sig);
 
-
+t = [0:length(rcv_sig_real)-1];
 rcv_sig = rcv_sig_real+ j*rcv_sig_imag;
+
 original_sig = scatterplot(sig,1,0,'b.');
 hold on;
 scatterplot(rcv_sig*2.5,1,0,'k*',original_sig);
@@ -101,22 +102,31 @@ function rcv_sig = IF_reciever(sig_with_carrier,ISREAL,group_delay,fc,fi,f_DMA,f
 
   % demodulatoin with carrier
   t = [0:length(r_DMA_sig)-1];
-  phase_shift = exp(1j*2*pi*fi/freq_DAC*t);
+  % phase_shift = exp(1j*2*pi*fi/freq_DAC*t);
   carrier = exp(-1j*2*pi*fi/freq_DAC*t);
   demod_sig = 0;
   if ISREAL
+    % demod_sig = r_DMA_sig .* carrier;
+    % demod_sig = real(r_DMA_sig .* carrier.* (2./(1+exp(-1j*2*pi*fi/freq_DAC*t))));
     demod_sig = real(r_DMA_sig .* carrier);
-    % demod_sig = r_DMA_sig * sqrt(2) .* cos(2*pi*fi/freq_DAC*t)
   else
+    % demod_sig = r_DMA_sig .* carrier;
+    % demod_sig = imag(r_DMA_sig .* carrier.*(2./(1-exp(-1j*2*pi*fi/freq_DAC*t))));
     demod_sig = imag(r_DMA_sig .* carrier);
-    % demod_sig = r_DMA_sig .* (-sqrt(2) .* sin(2*pi*fi/freq_DAC*t))
   end
   % demodulation
   r_ADC_f_sig = conv(demod_sig,srrc_DAC);
   r_ADC_f_sig = r_ADC_f_sig((srrc_DAC_length-1)/2+1:end-(srrc_DAC_length-1)/2);
   rcv_sig = ADC(r_ADC_f_sig,f_DAC);
   rcv_sig = rcv_sig/max(rcv_sig);
-
+  % t = [1:length(rcv_sig)];
+  % if ISREAL
+  %   % rcv_sig = real(rcv_sig .* (2./(1+exp(-1j*(2*2*pi*fi*t))+exp(-1j*2*2*pi*(-fi)*t))));
+  %   rcv_sig = real(rcv_sig);
+  % % else
+  %   % rcv_sig = imag(rcv_sig .*(2./(exp(j*0)-exp(-1j*2*2*pi*fi*t-0)+exp(-1j*(2*2*pi*(-fi)*t+0)))));
+  %   rcv_sig = imag(rcv_sig);
+  % end
 end
 
 function DAC_sig = DAC(origin_sig,up_factor)

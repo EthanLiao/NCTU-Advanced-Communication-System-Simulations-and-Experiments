@@ -48,7 +48,7 @@ compar_sig = alpha * sig + beta * conj(sig);
 subplot(2,1,1);stem(real(sig));hold on;stem(rcv_sig_real);hold on;stem(real(compar_sig));title('QPSK Real Signal');grid on;legend('original signal','imbalance signal','generated siganl');
 subplot(2,1,2);stem(imag(sig));hold on;stem(rcv_sig_imag);hold on;stem(imag(compar_sig));title('QPSK Image Signal');grid on;legend('original signal','imbalance signal','generated siganl');
 
-rcv_sig = rcv_sig_real+ j*rcv_sig_imag
+rcv_sig = rcv_sig_real+ j*rcv_sig_imag;
 original_sig = scatterplot(sig,1,0,'b.');
 hold on;
 scatterplot(rcv_sig*2.5,1,0,'k*',original_sig)
