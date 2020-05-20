@@ -1,22 +1,25 @@
 clf;clear all;close all;
 
 signal = [1 zeros(1,127)];
+
+% Causal System
+channel_gain_fast = 0.3 ; channel_gain_med = 1 ;  channel_gain_slow = 0.3;
+ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_med, channel_gain_slow));
+L = length(ISI_signal);
+h = 8*(-1/3)*((-1/3).^[0:L-1]);
+equalized_signal = conv(ISI_signal,h);
+L = length(equalized_signal);
+w = 80*((-3).^[-L:-1]);
+equalized_signal = conv(equalized_signal,w);
+
 subplot(3,1,1);stem(signal);title('Transmitted Signal');grid on;
+subplot(3,1,2);stem(ISI_signal);title('Recieced signal');grid on;
+subplot(3,1,3);stem(equalized_signal);title('Recover Causal');grid on;
 
-% Multiple Tap
-channel_gain_fast = 1 ; channel_gain_slow = -0.5; Tap_interval = 63;
-ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_slow, Tap_interval));
-subplot(3,1,2);stem(ISI_signal);title('Multiple Tap');grid on;
-
-% Not multiple_tap
-channel_gain_fast = 0.5 ; channel_gain_slow = -1; Tap_interval = 67;
-ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_slow, Tap_interval));
-subplot(3,1,3);stem(ISI_signal);title('Not Multiple Tap');grid on;
-
-function isi_sig = ISI_system(signal, channel_gain_fast, channel_gain_slow, Tap_interval)
+function isi_sig = ISI_system(signal, channel_gain_fast, channel_gain_med, channel_gain_slow)
   t_sig = trans_branch(signal);
-  multipath_effect = [channel_gain_fast zeros(1, Tap_interval) channel_gain_slow];
-  c_sig = conv(t_sig,multipath_effect);
+  multipath = [channel_gain_fast zeros(1, 63) channel_gain_med zeros(1, 63) channel_gain_slow ];
+  c_sig = conv(t_sig,multipath);
   isi_sig = recieve_branch(c_sig);
 end
 

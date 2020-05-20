@@ -15,7 +15,6 @@ phi = 0;
 group_delay = 3;
 
 srrc_16 = srrc_pulse(16,5,0.3);
-
 srrc_16_len = length(srrc_16);
 
 mod_sig_real = trans_branch(real(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay);
