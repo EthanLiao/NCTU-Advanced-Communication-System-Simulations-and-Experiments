@@ -53,3 +53,7 @@ demux_data = demultiplexing(desub_data,1)
 
 % QAM demodulate
 QAM_demod_data = QAM_demod(demux_data)
+
+plot(data);
+hold on
+plot(QAM_demod_data)
