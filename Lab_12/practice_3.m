@@ -23,8 +23,8 @@ srrc_64_delay = (length(srrc_64)-1)/2;
 t_DAC_sig = DAC(signal, f_DAC/fs);
 g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
-figure()
-plot(g_sig)
+% figure()
+% plot(g_sig)
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
@@ -37,8 +37,8 @@ IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/fs*t));
 
 
 % DAC/F
-t_DMA_sig = conv(DAC(IF_sig,f_DMA/f_DAC),srrc_64);
-t_DMA_sig = t_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
+t_DMA_sig = conv(DAC(IF_sig,f_DMA/f_DAC),srrc_16);
+t_DMA_sig = t_DMA_sig(srrc_16_delay+1:end-srrc_16_delay);
 
 % % carrier modulation
 % t = [0:length(t_DMA_sig)-1];
