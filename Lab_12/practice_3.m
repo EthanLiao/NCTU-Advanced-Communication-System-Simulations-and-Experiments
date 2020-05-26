@@ -31,6 +31,9 @@ g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
 % g_sig = g_sig / max(g_sig);
 
+figure()
+plot(abs(fft(g_sig)));title('frequency domain of gaussian modulated signal');
+
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
@@ -80,6 +83,8 @@ r_sig = r_sig / max(r_sig);
 r_sig = ADC(r_sig, f_DAC/fs);
 r_sig(r_sig<0) = -0.5;
 r_sig(r_sig>0) = 0.5;
+figure()
+plot(abs(fft(r_sig)));title('frequency domain of recover signal');
 
 figure()
 stem(signal)
@@ -87,8 +92,10 @@ hold on
 stem(r_sig);title('Recieved signal');
 legend('transmitted','recieved');
 
-figure()
-plot()
+
+
+
+
 % some function for reuse
 function up_sig = DAC(sig,up_factor)
   up_sig = zeros(1,length(sig)*up_factor);
@@ -106,7 +113,7 @@ function g_filter = Gfilter(BT, M, fb)
   B = BT*fb;
   C = sqrt(2*pi/log(2)) * B;
   g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
-  g_filter = g_filter ./ sqrt(sum(g_filter));
+  g_filter = g_filter ./ sqrt(sum(g_filter.^2));
 end
 
 
@@ -122,47 +129,38 @@ function [y,t] = srrc_pulse(T,A,a)
 end
 
 function PHI=phase(G)
-%PHASE  Computes the phase of a complex vector
-%
-%   PHI=phase(G)
-%
-%   G is a complex-valued row vector and PHI is returned as its
-%   phase (in radians), with an effort made to keep it continuous
-%   over the pi-borders.
+  %PHASE  Computes the phase of a complex vector
+  %
+  %   PHI=phase(G)
+  %
+  %   G is a complex-valued row vector and PHI is returned as its
+  %   phase (in radians), with an effort made to keep it continuous
+  %   over the pi-borders.
 
-%   L. Ljung 10-2-86
-%   Copyright 1986-2004 The MathWorks, Inc.
-%   $Revision: 1.5.4.2 $  $Date: 2004/07/31 23:24:49 $
+  %   L. Ljung 10-2-86
+  %   Copyright 1986-2004 The MathWorks, Inc.
+  %   $Revision: 1.5.4.2 $  $Date: 2004/07/31 23:24:49 $
 
-%PHI = unwrap(angle(G));
-[nr,nc] = size(G);
-if min(nr,nc) > 1
-    error(sprintf(['PHASE applies only to row or column vectors.'...
-        '\nFor matrices you have to decide along which dimension the'...
-        '\nphase should be continuous.']))
+  %PHI = unwrap(angle(G));
+  [nr,nc] = size(G);
+  if min(nr,nc) > 1
+      error(sprintf(['PHASE applies only to row or column vectors.'...
+          '\nFor matrices you have to decide along which dimension the'...
+          '\nphase should be continuous.']))
+  end
+  if nr>nc
+      G = G.';
+  end
+  PHI=atan2(imag(G),real(G));
+  N=length(PHI);
+  DF=PHI(1:N-1)-PHI(2:N);
+  I=find(abs(DF)>3.5);
+  for i=I
+      if i~=0,
+          PHI=PHI+2*pi*sign(DF(i))*[zeros(1,i) ones(1,N-i)];
+      end
+  end
+  if nr>nc
+      PHI = PHI.';
+  end
 end
-if nr>nc
-    G = G.';
-end
-PHI=atan2(imag(G),real(G));
-N=length(PHI);
-DF=PHI(1:N-1)-PHI(2:N);
-I=find(abs(DF)>3.5);
-for i=I
-    if i~=0,
-        PHI=PHI+2*pi*sign(DF(i))*[zeros(1,i) ones(1,N-i)];
-    end
-end
-if nr>nc
-    PHI = PHI.';
-end
-end
-
-% % carrier modulation
-% t = [0:length(t_DMA_sig)-1];
-% mod_sig = DMA_sig.*exp(1j*2*pi*(fc-fIF)/fs*t);
-%
-%
-% % carrier demodulation
-% t = [0:length(mod_sig)-1];
-% dmod_sig = mod_sig.*exp(-1j*2*pi*(fc-fIF)/fs*t);
