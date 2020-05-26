@@ -23,13 +23,14 @@ srrc_64_delay = (length(srrc_64)-1)/2;
 t_DAC_sig = DAC(signal, f_DAC/fs);
 g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
-% figure()
-% plot(g_sig)
+
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
 end
 cp_sig = exp(1j*2*pi*fd/fs*1/fs*sum_gsig);
+
+
 
 % IF modulation
 t = [0:length(cp_sig)-1];
@@ -43,7 +44,7 @@ t_DMA_sig = t_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
 % F/ADC
 r_DMA_sig = conv(t_DMA_sig,srrc_64);
 r_DMA_sig = r_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
-r_DMA_sig = ADC(r_DMA_sig,f_DMA/f_DAC);
+r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
 
 % IF demodulation
 t = [0:length(r_DMA_sig)-1];
@@ -61,9 +62,9 @@ for i = 2:length(re_phase)
 end
 
 % Gaussian Filter and ADC
-r_sig = conv(re_phase_diff,gau_filter);
+r_sig = conv(re_phase_diff, gau_filter);
 r_sig = r_sig(gau_delay+1:end-gau_delay);
-r_sig = ADC(r_sig,f_DAC/fs);
+r_sig = ADC(r_sig, f_DAC/fs);
 
 r_sig = r_sig /max(abs(r_sig));
 figure()
@@ -84,7 +85,7 @@ end
 function g_filter = Gfilter(BT,M)
   t = [-16:16];
   g_filter = sqrt(2*pi/log(2))*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
-end
+ends
 
 
 function [y,t] = srrc_pulse(T,A,a)
