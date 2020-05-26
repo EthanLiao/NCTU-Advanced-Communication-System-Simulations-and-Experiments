@@ -34,7 +34,7 @@ cp_sig = exp(1j*2*pi*fd*1/fs*sum_gsig);
 
 % IF modulation
 t = [0:length(cp_sig)-1];
-IF_sig = real(cp_sig.*exp(1j*2*pi*fIF*t));
+IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/fs*t));
 
 
 % DAC/F
@@ -48,7 +48,7 @@ r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
 
 % IF demodulation
 t = [0:length(r_DMA_sig)-1];
-dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF*t);
+dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/fs*t);
 
 % F/PH
 re_srrc = conv(dmod_IF_sig,srrc_16);
