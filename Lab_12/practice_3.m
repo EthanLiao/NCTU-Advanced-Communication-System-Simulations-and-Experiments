@@ -37,18 +37,8 @@ IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/fs*t));
 
 
 % DAC/F
-t_DMA_sig = conv(DAC(IF_sig,f_DMA/f_DAC),srrc_16);
-t_DMA_sig = t_DMA_sig(srrc_16_delay+1:end-srrc_16_delay);
-
-% % carrier modulation
-% t = [0:length(t_DMA_sig)-1];
-% mod_sig = DMA_sig.*exp(1j*2*pi*(fc-fIF)/fs*t);
-%
-%
-% % carrier demodulation
-% t = [0:length(mod_sig)-1];
-% dmod_sig = mod_sig.*exp(-1j*2*pi*(fc-fIF)/fs*t);
-
+t_DMA_sig = conv(DAC(IF_sig,f_DMA/f_DAC),srrc_64);
+t_DMA_sig = t_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
 
 % F/ADC
 r_DMA_sig = conv(t_DMA_sig,srrc_64);
@@ -107,3 +97,13 @@ function [y,t] = srrc_pulse(T,A,a)
     y = 1/T * sin(pi.*t./T) ./ (pi*t./T);
   end
 end
+
+
+% % carrier modulation
+% t = [0:length(t_DMA_sig)-1];
+% mod_sig = DMA_sig.*exp(1j*2*pi*(fc-fIF)/fs*t);
+%
+%
+% % carrier demodulation
+% t = [0:length(mod_sig)-1];
+% dmod_sig = mod_sig.*exp(-1j*2*pi*(fc-fIF)/fs*t);
