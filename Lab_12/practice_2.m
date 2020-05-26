@@ -4,7 +4,7 @@ pulse = Gfilter(BT, 10);
 subplot(2,1,1);plot(pulse);title("time domain Gaussian filter");
 subplot(2,1,2);plot(abs(fftshift(pulse)));title("frequncy domain Gaussian filter");
 
-function g_filter = Gfilter(B,L)
-  t = [-L:0.001:L];
-  g_filter = sqrt(2*pi/log10(2))*B*exp(-2*pi/log10(2)*B^2*(t.^2));
+function g_filter = Gfilter(BT,M)
+  t = [-16:16];
+  g_filter = sqrt(2*pi/log(2))*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
 end

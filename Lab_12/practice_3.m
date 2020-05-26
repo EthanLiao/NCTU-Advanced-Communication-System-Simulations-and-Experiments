@@ -8,9 +8,9 @@ BT = 0.5;
 f_DAC = 16*10^6;
 f_DMA = 64*10^6;
 signal = [-1,1,-1,1];
-L = 10;
+L = 16;
 
-gau_filter = Gfilter(BT,L);
+gau_filter = Gfilter(BT,f_DAC/fs);
 gau_delay = (length(gau_filter)-1)/2;
 
 srrc_16 = srrc_pulse(f_DAC/fs,5,0.3);
@@ -23,7 +23,8 @@ srrc_64_delay = (length(srrc_64)-1)/2;
 t_DAC_sig = DAC(signal, f_DAC/fs);
 g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
-
+figure()
+plot(g_sig)
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
@@ -39,18 +40,18 @@ IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/fs*t));
 t_DMA_sig = conv(DAC(IF_sig,f_DMA/f_DAC),srrc_64);
 t_DMA_sig = t_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
 
-% carrier modulation
-t = [0:length(t_DMA_sig)-1];
-mod_sig = DMA_sig.*exp(1j*2*pi*(fc-fIF)/fs*t);
-
-
-% carrier demodulation
-t = [0:length(mod_sig)-1];
-dmod_sig = mod_sig.*exp(-1j*2*pi*(fc-fIF)/fs*t);
+% % carrier modulation
+% t = [0:length(t_DMA_sig)-1];
+% mod_sig = DMA_sig.*exp(1j*2*pi*(fc-fIF)/fs*t);
+%
+%
+% % carrier demodulation
+% t = [0:length(mod_sig)-1];
+% dmod_sig = mod_sig.*exp(-1j*2*pi*(fc-fIF)/fs*t);
 
 
 % F/ADC
-r_DMA_sig = conv(dmod_sig,srrc_64);
+r_DMA_sig = conv(t_DMA_sig,srrc_64);
 r_DMA_sig = r_DMA_sig(srrc_64_delay+1:end-srrc_64_delay);
 r_DMA_sig = ADC(r_DMA_sig,f_DMA/f_DAC);
 
@@ -90,10 +91,11 @@ function down_sig = ADC(sig, down_factor)
 end
 
 % Gaussian Filter
-function g_filter = Gfilter(B,L)
-  t = [-L:0.001:L];
-  g_filter = sqrt(2*pi/log10(2))*B*exp(-2*pi/log10(2)*B^2*(t.^2));
+function g_filter = Gfilter(BT,M)
+  t = [-16:16];
+  g_filter = sqrt(2*pi/log(2))*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
 end
+
 
 function [y,t] = srrc_pulse(T,A,a)
   t = [-A*T:A*T] + 10^(-8);
