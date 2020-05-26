@@ -55,7 +55,7 @@ re_srrc = conv(dmod_IF_sig,srrc_16);
 re_srrc = re_srrc(srrc_16_delay+1:end-srrc_16_delay);
 
 % phase and diff
-re_phase = phase(re_srrc);
+re_phase = -phase(re_srrc);
 re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fs);
 for i = 2:length(re_phase)
   re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fs);
