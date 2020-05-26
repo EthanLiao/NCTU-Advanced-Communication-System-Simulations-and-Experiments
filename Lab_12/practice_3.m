@@ -67,6 +67,7 @@ r_sig = r_sig(gau_delay+1:end-gau_delay);
 r_sig = ADC(r_sig, f_DAC/fs);
 
 r_sig = r_sig /max(abs(r_sig));
+r_sig = r_sig(r_sig>0)-r_sig(r_sig<0);
 figure()
 stem(r_sig);title('Recieved signal');
 
