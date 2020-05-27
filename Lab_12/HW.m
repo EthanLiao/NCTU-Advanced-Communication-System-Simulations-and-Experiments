@@ -2,8 +2,8 @@
 clf;close all;close all;
 % notice that fs fd fIF should be normalized
 fs = 1*10^6;
-
-fd = 150*10^3/fs;
+fc = 8*10^6/fs;
+fd = 1*150*10^3/fs;
 fIF = 2*10^6/fs;
 f_DAC = 16*10^6/fs;
 f_DMA = 64*10^6/fs;
@@ -32,15 +32,12 @@ g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
 % g_sig = g_sig / max(g_sig);
 
-
-
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
 end
 cp_sig = exp(1j*2*pi*fd*1/fs*sum_gsig);
-figure()
-plot(abs(fft(cp_sig)));title('frequency domain of gaussian modulated signal');
+
 
 
 % IF modulation
@@ -52,6 +49,20 @@ IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC/fs)*t));
 t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4);
 t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
 t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
+
+% modulation with Carrier
+t = [0:length(t_DMA_sig)-1];
+carrier = exp(1j*2*pi*(fc-fIF)/fs*t);
+carrier_sig = t_DMA_sig .*carrier;
+
+% AWGN
+SNR_DB = 1;
+noise_sig = AWGN(carrier_sig,SNR_DB);
+
+% demodulation
+t = [0:length(noise_sig)-1];
+carrier = exp(-1j*2*pi*(fc-fIF)/fs*t);
+demod_sig = noise_sig.*carrier;
 
 % F/ADC
 r_DMA_sig = conv(t_DMA_sig, srrc_4);
@@ -68,8 +79,7 @@ dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/(f_DAC/fs)*t);
 re_srrc = conv(dmod_IF_sig,srrc_4);
 re_srrc = re_srrc(srrc_4_delay+1:end-srrc_4_delay);
 re_srrc = re_srrc/max(re_srrc);
-figure()
-plot(abs(fft(re_srrc)));title('frequency domain of recover signal');
+
 
 % phase and diff
 re_phase = phase(re_srrc);
@@ -87,7 +97,6 @@ r_sig = ADC(r_sig, f_DAC/fs);
 r_sig(r_sig<0) = -0.5;
 r_sig(r_sig>0) = 0.5;
 
-
 figure()
 stem(signal)
 hold on
@@ -100,7 +109,26 @@ plot(phase(cp_sig));
 hold on
 plot(phase(re_srrc));
 title("phase comparison");
-legend("Transmitted Phase","Recieved Phase");
+
+figure()
+plot(abs(fft(cp_sig)));
+hold on
+plot(abs(fft(re_srrc)));
+title('frequency domain of gaussian modulated and demodulated signal');
+legend("modulated", "demodulated");
+
+function y = AWGN(x,N_dB)
+  L = length(x);
+  SNR_DB = 10^(N_dB/10);
+  SYME = sum(abs(x).^2)/L;
+  N0 = SYME / SNR_DB;
+  if isreal(x)
+    n = sqrt(N0) * randn(1,L);
+  else
+    n = sqrt(N0/2) * (randn(1,L)+1j*randn(1,L));
+  end
+  y = x + n ;
+end
 
 
 % some function for reuse
@@ -121,7 +149,6 @@ function g_filter = Gfilter(BT, M, Tb)
   C = sqrt(2*pi/log(2)) * B;
   g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
   g_filter = g_filter ./ sqrt(sum(g_filter.^2));
-  % g_filter = g_filter ./ max(g_filter.^2);
 end
 
 

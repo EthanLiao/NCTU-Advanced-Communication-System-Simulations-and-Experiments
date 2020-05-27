@@ -208,3 +208,11 @@ function demod_sig = BPSK_demod(sig)
   neg_arr = neg_arr*(-1)
   demod_sig = pos_arr+neg_arr
 end
+
+function g_filter = Gfilter(BT, M, Tb)
+  t = [-64:64];
+  B = BT/Tb;
+  C = sqrt(2*pi/log(2)) * B;
+  g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
+  g_filter = g_filter ./ sqrt(sum(g_filter.^2));
+end
