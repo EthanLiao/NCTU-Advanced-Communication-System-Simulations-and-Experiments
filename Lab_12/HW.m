@@ -1,21 +1,21 @@
 % Parametors
 clf;close all;close all;
-% notice that fs fd fIF should be normalized
-fs = 1*10^6;
-fc = 8*10^6/fs;
-fd = 1*150*10^3/fs;
-fIF = 2*10^6/fs;
-f_DAC = 16*10^6/fs;
-f_DMA = 64*10^6/fs;
-fs = fs/fs;
-Tb = 1/fs;
+% notice that fb fd fIF should be normalized
+fb = 1*10^6;
+fc = 8*10^6/fb;
+fd = 10*150*10^3/fb;
+fIF = 2*10^6/fb;
+f_DAC = 16*10^6/fb;
+f_DMA = 64*10^6/fb;
+fb = fb/fb;
+Tb = 1/fb;
 BT = 0.5;
 
 N = 13;
 signal = randi([0 1],1,N);
 signal(signal==0) = -1;
 
-gau_filter = Gfilter(BT,f_DAC,Tb);
+gau_filter = Gfilter(BT,f_DAC,Tb/16);
 gau_delay = (length(gau_filter)-1)/2;
 figure()
 plot(gau_filter);title("Gaussian filter");
@@ -27,7 +27,7 @@ srrc_4 = srrc_pulse(f_DMA/f_DAC,10,1);
 srrc_4_delay = (length(srrc_4)-1)/2;
 
 % Gaussian filter
-t_DAC_sig = DAC(signal, f_DAC/fs);
+t_DAC_sig = DAC(signal, f_DAC/fb);
 g_sig = conv(t_DAC_sig, gau_filter);
 g_sig = g_sig(gau_delay+1:end-gau_delay);
 % g_sig = g_sig / max(g_sig);
@@ -36,23 +36,23 @@ g_sig = g_sig(gau_delay+1:end-gau_delay);
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
 end
-cp_sig = exp(1j*2*pi*fd*1/fs*sum_gsig);
+cp_sig = exp(1j*2*pi*fd*1/fb*sum_gsig);
 
 
 
 % IF modulation
 t = [0:length(cp_sig)-1];
-IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC/fs)*t));
+IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC/fb)*t));
 
 
 % DAC/F
 t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4);
 t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
+% t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
 
 % modulation with Carrier
 t = [0:length(t_DMA_sig)-1];
-carrier = exp(1j*2*pi*(fc-fIF)/fs*t);
+carrier = exp(1j*2*pi*(fc-fIF)/(fb*4*16)*t);
 carrier_sig = t_DMA_sig .*carrier;
 
 % AWGN
@@ -61,39 +61,39 @@ noise_sig = AWGN(carrier_sig,SNR_DB);
 
 % demodulation
 t = [0:length(noise_sig)-1];
-carrier = exp(-1j*2*pi*(fc-fIF)/fs*t);
+carrier = exp(-1j*2*pi*(fc-fIF)/(fb*4*16)*t);
 demod_sig = noise_sig.*carrier;
 
 % F/ADC
 r_DMA_sig = conv(t_DMA_sig, srrc_4);
 r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+% r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
 
 
 % IF demodulation
 t = [0:length(r_DMA_sig)-1];
-dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/(f_DAC/fs)*t);
+dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/(f_DAC/fb)*t);
 
 % F/PH
 re_srrc = conv(dmod_IF_sig,srrc_4);
 re_srrc = re_srrc(srrc_4_delay+1:end-srrc_4_delay);
-re_srrc = re_srrc/max(re_srrc);
+% re_srrc = re_srrc/max(re_srrc);
 
 
 % phase and diff
 re_phase = phase(re_srrc);
-re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fs);
+re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fb);
 for i = 2:length(re_phase)
-  re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fs);
+  re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fb);
 end
 
 % Gaussian Filter and ADC
 r_sig = conv(re_phase_diff, gau_filter);
 r_sig = r_sig(gau_delay+1:end-gau_delay);
-r_sig = r_sig / max(r_sig);
+% r_sig = r_sig / max(r_sig);
 
-r_sig = ADC(r_sig, f_DAC/fs);
+r_sig = ADC(r_sig, f_DAC/fb);
 r_sig(r_sig<0) = -0.5;
 r_sig(r_sig>0) = 0.5;
 
@@ -111,9 +111,9 @@ plot(phase(re_srrc));
 title("phase comparison");
 
 figure()
-plot(abs(fft(cp_sig)));
+plot(abs(fftshift(fft(cp_sig))));
 hold on
-plot(abs(fft(re_srrc)));
+plot(abs(fftshift(fft(re_srrc))));
 title('frequency domain of gaussian modulated and demodulated signal');
 legend("modulated", "demodulated");
 
@@ -146,8 +146,8 @@ end
 function g_filter = Gfilter(BT, M, Tb)
   t = [-64:64];
   B = BT/Tb;
-  C = sqrt(2*pi/log(2)) * B;
-  g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
+  C = sqrt(2*pi/log10(2)) * B;
+  g_filter = C*exp(-2*(pi^2)/log10(2)*(BT/M)^2*(t.^2));
   g_filter = g_filter ./ sqrt(sum(g_filter.^2));
 end
 
