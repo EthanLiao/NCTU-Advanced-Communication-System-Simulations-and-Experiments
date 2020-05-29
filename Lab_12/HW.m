@@ -15,7 +15,7 @@ N = 13;
 signal = randi([0 1],1,N);
 signal(signal==0) = -1;
 
-gau_filter = Gfilter(BT,f_DAC,Tb/16);
+gau_filter = Gfilter(BT,f_DAC,Tb/f_DAC);
 gau_delay = (length(gau_filter)-1)/2;
 figure()
 plot(gau_filter);title("Gaussian filter");
@@ -52,7 +52,7 @@ t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
 
 % modulation with Carrier
 t = [0:length(t_DMA_sig)-1];
-carrier = exp(1j*2*pi*(fc-fIF)/(fb*4*16)*t);
+carrier = exp(1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
 carrier_sig = t_DMA_sig .*carrier;
 
 % AWGN
@@ -61,7 +61,7 @@ noise_sig = AWGN(carrier_sig,SNR_DB);
 
 % demodulation
 t = [0:length(noise_sig)-1];
-carrier = exp(-1j*2*pi*(fc-fIF)/(fb*4*16)*t);
+carrier = exp(-1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
 demod_sig = noise_sig.*carrier;
 
 % F/ADC

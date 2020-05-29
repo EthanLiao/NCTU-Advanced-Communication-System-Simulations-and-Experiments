@@ -20,7 +20,7 @@ gau_delay = (length(gau_filter)-1)/2;
 figure()
 plot(gau_filter);title("Gaussian filter");
 
-srrc_16 = srrc_pulse(f_DAC,10,1);
+srrc_16 = srrc_pulse(f_DAC/fs,10,1);
 srrc_16_delay = (length(srrc_16)-1)/2;
 
 srrc_4 = srrc_pulse(f_DMA/f_DAC,10,1);
