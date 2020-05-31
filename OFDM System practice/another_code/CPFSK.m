@@ -11,7 +11,7 @@ fs = fs/fs;
 Tb = 1/fs;
 BT = 0.5;
 
-N = 13;
+N = 60;
 signal = randi([0 1],1,N);
 signal(signal==0) = -1;
 
@@ -89,10 +89,18 @@ r_sig = r_sig(gau_delay+1:end-gau_delay);
 r_sig = r_sig / max(r_sig);
 
 r_sig = ADC(r_sig, f_DAC/fs);
-r_sig(r_sig<0) = -0.5;
-r_sig(r_sig>0) = 0.5;
+% r_sig(r_sig<0) = -0.5;
+% r_sig(r_sig>0) = 0.5;
+r_sig(r_sig<0) = -1;
+r_sig(r_sig>0) = 1;
 
-
+if(sum(r_sig==signal)==length(signal))
+  % correct
+  x = 1
+else
+  % not correct
+  x = 0
+end
 figure()
 stem(signal)
 hold on
