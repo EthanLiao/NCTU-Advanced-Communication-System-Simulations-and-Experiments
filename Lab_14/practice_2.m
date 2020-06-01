@@ -15,7 +15,7 @@ function y = float_operation(x,h)
   z_n = x;
   for i = 1:4
     if i == 1
-      y = h(i) * x;
+      y = h(i) * z_n;
     else
       z_n = [tap z_n];
       y = [y tap] + h(i) * z_n;
