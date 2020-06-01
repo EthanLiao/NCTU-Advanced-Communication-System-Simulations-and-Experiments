@@ -1,6 +1,6 @@
 clf;clear all;close all;
 
-N = 100;
+N = 10;
 sig_1 = randi([0,1],1,N);
 sig_1((sig_1==0)) = -1;
 
@@ -34,11 +34,12 @@ rcv_beam = inv_H * mimo_rcv;
 
 % signal detect
 rcv_beam = real(rcv_beam);
-rcv_beam(rcv_beam>0) = 1;
-rcv_beam(rcv_beam<0) = -1;
+rcv_beam = rcv_beam / max(rcv_beam,[],'all');
+% rcv_beam(rcv_beam>0.5) = 1;
+% rcv_beam(rcv_beam<-0.5) = -1;
 
 % symbol error rate
-zf_symbol_err = mean(sig==rcv_beam, 'all')
+zf_symbol_err = 1-mean(sig==rcv_beam, 'all')
 % Zero forcing
 subplot(2,2,1);stem(sig_1);title("ZF transmission signal branch 1");
 subplot(2,2,2);stem(sig_2);title("ZF transmission signal branch 2");
@@ -49,7 +50,7 @@ subplot(2,2,4);stem(rcv_beam(2,:));title("ZF recieved signal branch 2");
 
 % MMSE Dectector
 % calculate Signal to noise power ratio : sigm
-SNR_DB = 2;
+SNR_DB = 0;
 sigm = 10^(SNR_DB/10);
 
 W = inv(H'*H + 1/sigm * eye(2))*H';
@@ -57,11 +58,12 @@ rcv_beam = W * mimo_rcv;
 
 % signal detect
 rcv_beam = real(rcv_beam);
-rcv_beam(rcv_beam>0) = 1;
-rcv_beam(rcv_beam<0) = -1;
+rcv_beam = rcv_beam / max(rcv_beam,[],'all');
+% rcv_beam(rcv_beam>0.5) = 1;
+% rcv_beam(rcv_beam<-0.5) = -1;
 
 % symbol error rate
-mmse_symbol_err = mean(sig==rcv_beam, 'all')
+mmse_symbol_err = 1-mean(sig==rcv_beam, 'all')
 % MMSE
 figure();
 subplot(2,2,1);stem(sig_1);title("MMSE transmission signal branch 1");
@@ -75,7 +77,7 @@ function trans_sig = trans_branch(sig)
   fs = 64*10^6;
   f_DAC = 16;
   f_DMA = 4;
-  SNR_DB = 2;
+  SNR_DB = 0;
   srrc_4 =srrc_pulse(4, 5, 1);
   srrc_16 =srrc_pulse(16, 5, 1);
   t_DAC_sig = conv(DAC(sig, f_DAC), srrc_16, 'same');
