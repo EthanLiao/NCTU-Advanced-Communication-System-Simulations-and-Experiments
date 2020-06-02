@@ -1,6 +1,6 @@
 clf;clear all;close all;
 
-N = 5;
+N = 200;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
@@ -24,12 +24,15 @@ rcv_beam = inv_H * mimo_rcv / length(inv_H);
 
 % signal detect
 rcv_beam = real(rcv_beam);
-rcv_beam(rcv_beam>0) = 1;
-rcv_beam(rcv_beam<0) = -1;
+% rcv_beam(rcv_beam>0) = 1;
+% rcv_beam(rcv_beam<0) = -1;
+%
+% subplot(2,1,1);stem(sig);title("transmission signal");
+% subplot(2,1,2);stem(rcv_beam);title("recieved signal");
 
-subplot(2,1,1);stem(sig);title("transmission signal");
-subplot(2,1,2);stem(rcv_beam);title("recieved signal");
-
+stem(sig);title("transmission signal");
+hold on;
+stem(rcv_beam)
 function trans_sig = trans_branch(sig)
   % modulatoin part
   fc = 16*10^6;
