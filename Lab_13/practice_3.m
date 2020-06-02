@@ -17,6 +17,7 @@ t_sig = [t_sig_1 ; t_sig_2];
 
 % 2x2 System
 H = randn(2,2);
+H = sqrt(1/2) * H +1j * sqrt(1/2) * H;
 mimo_rcv = H*t_sig;
 
 
@@ -51,7 +52,7 @@ subplot(2,2,4);stem(rcv_beam(2,:));title("ZF recieved signal branch 2");
 
 % MMSE Dectector
 % calculate Signal to noise power ratio : sigm
-SNR_DB = 5;
+SNR_DB = 0;
 sigm = 10^(SNR_DB/10);
 
 % SNR_DB = SNR(sig, mimo_rcv);
@@ -64,8 +65,8 @@ mmse_rcv_beam = W * mimo_rcv;
 % signal detect
 mmse_rcv_beam = real(mmse_rcv_beam);
 % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
-mmse_rcv_beam(rcv_beam>0.3) = 1;
-mmse_rcv_beam(rcv_beam<-0.3) = -1;
+% mmse_rcv_beam(rcv_beam>0.3) = 1;
+% mmse_rcv_beam(rcv_beam<-0.3) = -1;
 
 % symbol error rate
 % mmse_symbol_err = 1-mean(sig==rcv_beam, 'all')
@@ -99,7 +100,7 @@ function rcv_sig = recieve_branch(demod_sig)
   f_DMA = 4;
   srrc_4 =srrc_pulse(4, 5, 1);
   srrc_16 =srrc_pulse(16, 5, 1);
-  SNR_DB = 10;
+  SNR_DB = 0;
   t = [0:length(demod_sig)-1];
 
   demod_sig = add_awgn_noise(demod_sig, SNR_DB);
@@ -148,7 +149,7 @@ function y = add_awgn_noise(x,SNR_DB)
 end
 
 function snr = SNR(x,y)
-  % snr = 10*log10(mean(x.^2, 'all') / mean((y-x).^2, 'all'));
-  snr = 10*log10(var(x, 0 ,'all') / var((y-x), 0 ,'all'));
+  snr = 10*log10(mean(x.^2, 'all') / mean((y-x).^2, 'all'));
+  % snr = 10*log10(var(x, 0 ,'all') / var((y-x), 0 ,'all'));
   % snr = var(x, 0 ,'all') / var((y-x), 0 ,'all');
 end
