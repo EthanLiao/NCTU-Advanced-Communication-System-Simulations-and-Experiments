@@ -1,15 +1,17 @@
 clf;clear all;close all;
-val = [-1:0.1:1];
+val = [-1:0.001:1];
 q_val = real_ADC(val, 3, [-1,1]);
-q_val_2 = real_ADC(val, 4, [-1,1]);
+q_val_2 = real_ADC(val, 5, [-1,1]);
 
 q_sqnr = SQNR(val, q_val)
 q_sqnr_2 = SQNR(val, q_val_2)
 
-SNR_DB = 2;
-awgn_q_val = add_awgn_noise(q_val,SNR_DB);
+% SNR_DB = 2;
+% awgn_q_val = add_awgn_noise(q_val,SNR_DB);
+%
+% awgn_sqnr = SQNR(val, awgn_q_val)
 
-awgn_sqnr = SQNR(val, awgn_q_val)
+plot(q_val);title("quantization signal");
 
 function adc_sig = real_ADC(val, bits_amt, range)
 % val : analog input vector

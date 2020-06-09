@@ -1,26 +1,29 @@
 clf;clear all;close all;
 
 h = [0.1, 0.2, 0.3, 0.4];
-val = [-0.1:0.1:0.1];
+val = [-1:0.01:1];
 
-q_val = real_ADC(val, 3, [min(val),max(val)]);
-q_h = real_ADC(h, 3, [min(h),max(h)]);
+% floating point operation
+filt_sig = float_operation(val, h);
 
-filt_sig = float_operation(q_val, q_h);
+% fixed point operation
+NOB = 3;
+q_val = real_ADC(val, NOB, [min(val),max(val)]);
+q_h = real_ADC(h, NOB, [min(h),max(h)]);
+q_filt_sig = float_operation(q_val, q_h);
 
-q_sqnr = SQNR(val, filt_sig)
-histogram(filt_sig);title("Dinamic range of input");
+q_sqnr = SQNR(filt_sig, q_filt_sig)
 
 
 function y = float_operation(x,h)
-  tap = zeros(1:length(x)-1);
+  % tap = zeros(1:length(x)-1);
   z_n = x;
   for i = 1:length(h)
     if i == 1
       y = h(i) * z_n;
     else
-      z_n = [tap z_n];
-      y = [y tap] + h(i) * z_n;
+      z_n = [0 z_n];
+      y = [y 0] + h(i) * z_n;
     end
   end
   % tap = zeros(1:length(x)-1)
