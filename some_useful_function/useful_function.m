@@ -64,7 +64,14 @@ function y = add_awgn_noise(x,SNR_DB)
   end
   y = x + n
 end
-
+% ----------- SNR ---------------------------
+function snr = SNR(tr_sig,rcv_sig)
+  if isreal(tr_sig)
+    snr = 10*log10(mean(rcv_sig.^2)/mean((rcv_sig-tr_sig).^2));
+  else
+    snr = 10*log10(mean(abs(rcv_sig).^2)/mean(abs(rcv_sig-tr_sig).^2));
+  end
+end
 % ----------- Padding Utility ---------------
 
 function pad_array = pad(signal,zero_num)

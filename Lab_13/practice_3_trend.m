@@ -10,9 +10,10 @@ sig = [sig_1 ; sig_2];
 SNR_l = [-20:1:20];
 zf_snr = zeros(1,length(SNR_l));
 mmse_snr = zeros(1,length(SNR_l));
-
+zf_sym_err = zeros(1,length(SNR_l));
+mmse_sym_err = zeros(1,length(SNR_l));
 for i=1:length(SNR_l)
-  [zf_snr(i), mmse_snr(i)] = MIMO_eval(SNR_l(i), sig);
+  [zf_snr(i), mmse_snr(i), zf_sym_err(i), mmse_sym_err(i)] = MIMO_eval(SNR_l(i), sig);
 end
 
 
@@ -21,7 +22,13 @@ hold on;
 plot(SNR_l,mmse_snr);
 legend("Zero forcing SNR", "MMSE SNR")
 
-function  [zf_snr, mmse_snr]= MIMO_eval(SNR_DB, sig)
+% figure()
+% plot(SNR_l,zf_sym_err);
+% hold on;
+% plot(SNR_l,mmse_sym_err);
+% legend("Zero forcing symbol error rate", "MMSE symbol error rate")
+
+function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, sig)
   % 2x2 System
   H = randn(2,2);
   H = sqrt(1/2) * H +1j * sqrt(1/2) * H;
@@ -38,10 +45,10 @@ function  [zf_snr, mmse_snr]= MIMO_eval(SNR_DB, sig)
   % signal detect
   rcv_beam = real(rcv_beam);
   % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
-  % rcv_beam(rcv_beam>0.5) = 1;
-  % rcv_beam(rcv_beam<-0.5) = -1;
+  rcv_beam(rcv_beam>0) = 1;
+  rcv_beam(rcv_beam<0) = -1;
   % symbol error rate
-  % zf_symbol_err = 1-mean(sig==rcv_beam, 'all')
+  zf_symbol_err = 1-mean(sig==rcv_beam, 'all');
   zf_snr = SNR(sig,rcv_beam);
   % ------------------MMSE Process-----------------
 
@@ -53,10 +60,10 @@ function  [zf_snr, mmse_snr]= MIMO_eval(SNR_DB, sig)
   % signal detect
   mmse_rcv_beam = real(mmse_rcv_beam);
   % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
-  % mmse_rcv_beam(rcv_beam>0.3) = 1;
-  % mmse_rcv_beam(rcv_beam<-0.3) = -1;
+  mmse_rcv_beam(rcv_beam>0) = 1;
+  mmse_rcv_beam(rcv_beam<0) = -1;
   % symbol error rate
-  % mmse_symbol_err = 1-mean(sig==rcv_beam, 'all')
+  mmse_symbol_err = 1-mean(sig==rcv_beam, 'all');
   mmse_snr = SNR(sig,mmse_rcv_beam);
 end
 
