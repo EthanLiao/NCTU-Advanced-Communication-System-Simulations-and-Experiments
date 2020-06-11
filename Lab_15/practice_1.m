@@ -1,8 +1,8 @@
 % Parametors
 clf;close all;close all;
 % notice that fb fd fIF should be normalized
-fb = 1*10^6;
-fc = 2.4*10^9/fb;
+fb = 1*10^6;        % data rate
+fc = 2.4*10^9/fb;   % data band
 fd = 1*150*10^3/fb;
 fIF = 2*10^6/fb;
 f_DAC = 16*10^6/fb;
@@ -168,6 +168,11 @@ function [y,t] = srrc_pulse(T,A,a)
   else
     y = 1/T * sin(pi.*t./T) ./ (pi*t./T);
   end
+end
+
+function [EVM_per,EVM_dB] = EVM(real_sig, ideal_sig)
+  EVM_per = sqrt(mean((ideal-real_sig).^2)/mean(ideal_sig.^2)) / 100;
+  EVM_dB = 10*log10(mean((ideal-real_sig).^2)/mean(ideal_sig.^2));
 end
 
 function PHI=phase(G)
