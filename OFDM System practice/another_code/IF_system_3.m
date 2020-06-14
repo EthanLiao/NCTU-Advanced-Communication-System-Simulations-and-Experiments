@@ -1,5 +1,5 @@
 clf;close all;clear all
-N = 20;
+N = 2000;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
@@ -8,25 +8,21 @@ carrier_frequency = 32*10^6;
 IF_frequency = 2*10^6;
 freq_DAC = 16*10^6;
 freq_DMA = 128*10^6;
+
 f_DAC = freq_DAC/symbol_rate;
 f_DMA = freq_DMA/freq_DAC;
 
 srrc_16 = srrc_pulse(16, 5, 0.3);
-srrc_8 = srrc_pulse(8,5,0.3);
-
 srrc_16_delay = (length(srrc_16)-1)/2;
-srrc_8_delay = (length(srrc_8)-1)/2;
 
 load('./filter/IIR_filter')
-
+group_delay = 7;
 % modulatoin part
 t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16);
 t_DAC_sig = t_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
 
-t_DMA_ana_sig = conv(DAC(t_DAC_sig,f_DMA),srrc_8);
-t_DMA_ana_sig = t_DMA_ana_sig(srrc_8_delay+1:end-srrc_8_delay);
-
-t_DMA_sig = filter(IIR_filter,t_DMA_ana_sig);
+t_DMA_sig = filter(IIR_filter,DAC(t_DAC_sig, f_DMA));
+t_DMA_sig = t_DMA_sig(group_delay:end);
 
 % modulatoin with carrier
 t = [0:length(t_DMA_sig)-1];
@@ -38,8 +34,8 @@ t_vec = [1:length(sig_with_carrier)];
 carrier = cos(2*pi*(carrier_frequency-IF_frequency)/freq_DMA*t_vec);
 
 IF_sig = sig_with_carrier .* carrier;
-r_DMA_f_sig = conv(IF_sig,srrc_8);
-r_DMA_f_sig = r_DMA_f_sig(srrc_8_delay+1:end-srrc_8_delay);
+r_DMA_f_sig = filter(IIR_filter,IF_sig);
+r_DMA_f_sig = r_DMA_f_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_f_sig,f_DMA);
 
 % demodulatoin with IF carrier
@@ -54,8 +50,6 @@ r_ADC_sig = ADC(r_ADC_f_sig,f_DAC);
 
 r_sig = r_ADC_sig./max(r_ADC_sig);
 
-% signal detection
-% rcv_sig = (r_sig>0) + (-(r_sig<0));
 snr = SNR(sig, r_sig)
 
 subplot(2,1,1);stem(sig);title('BPSK Signal');grid on;

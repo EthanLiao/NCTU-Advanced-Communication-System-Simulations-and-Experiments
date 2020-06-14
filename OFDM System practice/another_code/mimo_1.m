@@ -1,6 +1,6 @@
 clf;clear all;close all;
 
-N = 10;
+N = 1000;
 sig_1 = randi([0,1],1,N);
 sig_1((sig_1==0)) = -1;
 
@@ -57,11 +57,11 @@ mmse_rcv_beam = W * mimo_rcv;
 % signal detect
 mmse_rcv_beam = real(mmse_rcv_beam);
 % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
-mmse_rcv_beam(rcv_beam>0) = 1;
-mmse_rcv_beam(rcv_beam<0) = -1;
+mmse_rcv_beam(mmse_rcv_beam>0) = 1;
+mmse_rcv_beam(mmse_rcv_beam<0) = -1;
 %
 % % symbol error rate
-mmse_symbol_err = 1-mean(sig==rcv_beam, 'all')
+mmse_symbol_err = 1-mean(sig==mmse_rcv_beam, 'all')
 mmse_snr = SNR(sig, mmse_rcv_beam);
 
 % MMSE
