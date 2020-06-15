@@ -22,11 +22,11 @@ hold on;
 plot(SNR_l,mmse_snr);
 legend("Zero forcing SNR", "MMSE SNR")
 
-% figure()
-% plot(SNR_l,zf_sym_err);
-% hold on;
-% plot(SNR_l,mmse_sym_err);
-% legend("Zero forcing symbol error rate", "MMSE symbol error rate")
+figure()
+plot(SNR_l,zf_sym_err);
+hold on;
+plot(SNR_l,mmse_sym_err);
+legend("Zero forcing symbol error rate", "MMSE symbol error rate")
 
 function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, sig)
   % 2x2 System
@@ -44,7 +44,6 @@ function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, 
   rcv_beam = inv_H * mimo_rcv;
   % signal detect
   rcv_beam = real(rcv_beam);
-  % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
   rcv_beam(rcv_beam>0) = 1;
   rcv_beam(rcv_beam<0) = -1;
   % symbol error rate
@@ -59,11 +58,10 @@ function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, 
   mmse_rcv_beam = W * mimo_rcv;
   % signal detect
   mmse_rcv_beam = real(mmse_rcv_beam);
-  % rcv_beam = rcv_beam / max(rcv_beam,[],'all');
-  mmse_rcv_beam(rcv_beam>0) = 1;
-  mmse_rcv_beam(rcv_beam<0) = -1;
+  mmse_rcv_beam(mmse_rcv_beam>0) = 1;
+  mmse_rcv_beam(mmse_rcv_beam<0) = -1;
   % symbol error rate
-  mmse_symbol_err = 1-mean(sig==rcv_beam, 'all');
+  mmse_symbol_err = 1-mean(sig==mmse_rcv_beam, 'all');
   mmse_snr = SNR(sig,mmse_rcv_beam);
 end
 
