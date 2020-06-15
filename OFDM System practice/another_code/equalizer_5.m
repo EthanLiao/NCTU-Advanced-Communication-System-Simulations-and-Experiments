@@ -1,9 +1,7 @@
 clf;clear all;close all;
 
-
-
 % Causal System
-imp = [1; zeros(49,1)];
+imp = [1 ; zeros(49,1)];
 zero = 1;
 pole = [1, -1.2, -0.25, 0.3];
 h = filter(zero, pole, imp);
@@ -19,21 +17,23 @@ ADD_AWGN = false;
 ISI_signal = real(ISI_system(signal, multipath, ADD_AWGN, SNR_DB));
 
 L = length(ISI_signal);
-h = (-20/56)*((1/2).^[0:L-1]);
+h = (-120/56)*((1/2).^[0:L-1]);
 equalized_signal = conv(ISI_signal,h);
 
 L = length(equalized_signal);
-w = 20*36/(119*5)*(6/5)*((6/5).^[-L:-1]);
+w = 120*36/(119*5)*(6/5)*((6/5).^[-L:-1]);
 equalized_signal = conv(equalized_signal,w);
 
 L = length(equalized_signal);
-w = 20/(68*2)*((-1/2).^[0:L-1]);
+w = 120/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
-group_delay = 125;
+group_delay = 126;
 gain = 1/0.023041;
 equalized_signal = equalized_signal(group_delay:end)*gain;
 equalized_signal = equalized_signal(1:60);
+equalized_signal = equalized_signal/max(equalized_signal);
+
 snr_non_AWGN = SNR(signal,equalized_signal)
 
 subplot(3,1,1);stem(signal);title('Transmitted Signal');grid on;
@@ -46,21 +46,22 @@ ADD_AWGN = true;
 ISI_signal = real(ISI_system(signal, multipath, ADD_AWGN, SNR_DB));
 
 L = length(ISI_signal);
-h = (-20/56)*((1/2).^[0:L-1]);
+h = (-120/56)*((1/2).^[0:L-1]);
 equalized_signal = conv(ISI_signal,h);
 
 L = length(equalized_signal);
-w = 20*36/(119*5)*(6/5)*((6/5).^[-L:-1]);
+w = 120*36/(119*5)*(5/6)*((6/5).^[-L:-1]);
 equalized_signal = conv(equalized_signal,w);
 
 L = length(equalized_signal);
-w = 20/(68*2)*((-1/2).^[0:L-1]);
+w = 120/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
-group_delay = 125;
-gain = 1/0.023041;
-equalized_signal = equalized_signal(group_delay:end)*gain;
+group_delay = 126;
+% gain = 1/0.023041;
+equalized_signal = equalized_signal(group_delay:end);
 equalized_signal = equalized_signal(1:60);
+equalized_signal = equalized_signal/max(equalized_signal);
 snr_AWGN = SNR(signal,equalized_signal)
 
 figure()
@@ -148,5 +149,5 @@ function y = add_awgn_noise(x,SNR_DB)
 end
 
 function snr = SNR(x,y)
-  snr = mean(x.^2) / mean((y-x).^2);
+  snr = 10*log10(mean(x.^2) / mean((y-x).^2));
 end
