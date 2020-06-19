@@ -1,6 +1,6 @@
 clf;clear all; close all;
 % Generate qpsk signal
-N = 2000;
+N = 5000;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
@@ -19,6 +19,7 @@ mod_sig_real = trans_branch(sig, f_DAC, srrc_16, f_DMA, IIR_filter, group_delay)
 rcv_sig = recieve_branch(mod_sig_real, f_DMA, IIR_filter, f_DAC, srrc_16, group_delay);
 
 snr = SNR(sig, rcv_sig)
+% snr_db = snr(sig, rcv_sig-sig)
 subplot(2,1,1);stem(sig);title('BPSK Signal');grid on;
 subplot(2,1,2);stem(rcv_sig);title('Recieved Signal');grid on;
 
@@ -26,23 +27,32 @@ subplot(2,1,2);stem(rcv_sig);title('Recieved Signal');grid on;
 function trans_sig = trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
   % modulatoin part
   srrc_delay = (length(srrc)-1)/2;
+  %%%%%%%%%%%
   t_DAC_sig = conv(DAC(sig,f_DAC),srrc);
   t_DAC_sig = t_DAC_sig(srrc_delay+1:end-srrc_delay);
+  t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+  %%%%%%%%%%%
+
+  %%%%%%%%%%%
   trans_sig = filter(IIR_filter,DAC(t_DAC_sig,f_DMA));
   trans_sig = trans_sig(group_delay:end);
+  trans_sig = trans_sig / max(trans_sig);
+  %%%%%%%%%%%
 end
 
 function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_delay)
   f_sig = filter(IIR_filter,demod_sig);
   f_sig = f_sig(group_delay:end);
+  f_sig = f_sig / max(f_sig);
   f_sig = ADC(f_sig,f_DMA);
 
   srrc_delay = (length(srrc)-1)/2;
   r_DAC_sig = conv(f_sig,srrc);
   r_DAC_sig = r_DAC_sig(srrc_delay+1:end-srrc_delay);
+  r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
   rcv_sig = ADC(r_DAC_sig,f_DAC);
 
-  % be caution that we should modify gain here
+  % Be caution that we should modify gain here
   rcv_sig = rcv_sig / max(rcv_sig);
 end
 
@@ -68,6 +78,6 @@ function [y,t] = srrc_pulse(T,A,a)
 end
 
 function r_snr = SNR(tr_sig,rcv_sig)
-    r_snr = 10*log10(mean(abs(rcv_sig.^2))/mean(abs(rcv_sig-tr_sig).^2));
+    r_snr = 10*log10(mean((rcv_sig.^2))/mean((rcv_sig-tr_sig).^2));
     % r_snr = snr(tr_sig, rcv_sig-tr_sig);
 end

@@ -47,6 +47,10 @@ sqnr_hybrid = SQNR(filt_sig, q_hybrid_filt_sig)
 
 srrc = srrc_pulse(2,2,0.3);
 srrc_delay = (length(srrc)-1)/2;
+figure()
+plot(srrc);
+title("srrc 9 coefficient pulse");
+
 
 % srrc
 srrc_filt_sig = conv(q_val, srrc);

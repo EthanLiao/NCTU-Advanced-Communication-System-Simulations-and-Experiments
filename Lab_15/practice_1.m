@@ -1,5 +1,5 @@
 % Parametors
-clf;close all;close all;
+clf;clear all;close all;
 % notice that fb fd fIF should be normalized
 fb = 1*10^6;        % data rate
 fc = 2.4*10^9/fb;   % data band
@@ -11,7 +11,7 @@ fb = fb/fb;
 Tb = 1/fb;
 BT = 0.5;
 
-N = 13;
+N = 256;
 signal = randi([0 1],1,N);
 signal(signal==0) = -1;
 
@@ -28,26 +28,27 @@ srrc_4_delay = (length(srrc_4)-1)/2;
 
 % Gaussian filter
 t_DAC_sig = DAC(signal, f_DAC/fb);
-g_sig = conv(t_DAC_sig, gau_filter);
-g_sig = g_sig(gau_delay+1:end-gau_delay);
+g_sig = conv(t_DAC_sig, gau_filter, 'same');
+
+% g_sig = g_sig(gau_delay+1:end-gau_delay);
 % g_sig = g_sig / max(g_sig);
 
 % sum
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
 end
-cp_sig = exp(1j*2*pi*fd*1/fb*sum_gsig);
+cp_sig = exp(1j*2*pi*fd*1/(fb*f_DAC)*sum_gsig);
 
 
 
 % IF modulation
 t = [0:length(cp_sig)-1];
-IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC/fb)*t));
+IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC*fb)*t));
 
 
 % DAC/F
-t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4);
-t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4, 'same');
+% t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
 % t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
 
 % modulation with Carrier
@@ -67,9 +68,8 @@ demod_sig = noise_sig.*carrier;
 % F/ADC
 r_DMA_sig = conv(t_DMA_sig, srrc_4);
 r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-% r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
-
+% r_DMA_sig = real_ADC(r_DMA_sig, 6,[min(r_DMA_sig),max(r_DMA_sig)]);
 
 % IF demodulation
 t = [0:length(r_DMA_sig)-1];
@@ -91,9 +91,11 @@ end
 % Gaussian Filter and ADC
 r_sig = conv(re_phase_diff, gau_filter);
 r_sig = r_sig(gau_delay+1:end-gau_delay);
-% r_sig = r_sig / max(r_sig);
 
 r_sig = ADC(r_sig, f_DAC/fb);
+
+% r_sig = real_ADC(r_sig, 6,[min(r_sig),max(r_sig)]);
+
 r_sig(r_sig<0) = -0.5;
 r_sig(r_sig>0) = 0.5;
 
@@ -120,9 +122,23 @@ legend("modulated", "demodulated");
 
 % spectrum mask
 figure()
-[px, f] = pwelch(carrier_sig,[],[],[],1);
-plot(f,10*log10(px));
+[px, f] = pwelch(t_DMA_sig,[],[],[],1);
+freq_domain = 10*log10(px);
+N = 500;
+plot(f(1:N),freq_domain(1:N));
 title("spectrum mask");
+hold on;
+center = max(10*log10(px));
+
+% , 0.01:3/64
+freq_vec = [0.5/64:0.001:1/64 1/64:0.001:2/64 2/64:0.001:3/64 3/64:0.001:3.5/64 3.5/64:0.001:4.5/64 4.5/64:0.001:5.5/64];
+spec_vec = [(center-26)*ones(1,8) center*ones(1,16) center*ones(1,16) (center-26)*ones(1,8) (center-46)*ones(1,16) (center-66)*ones(1,16)];
+plot(freq_vec, spec_vec);
+hold on;
+% hold on;
+% freq_vec = [2/64 3/64 3.5/64 4.5/64]
+% spec_vec = [center center-26 center-46 center-86];
+
 
 function y = AWGN(x,N_dB)
   L = length(x);
@@ -149,12 +165,33 @@ function down_sig = ADC(sig, down_factor)
   down_sig = sig(1:down_factor:end);
 end
 
+function adc_sig = real_ADC(val, bits_amt, range)
+% val : analog input vector
+% bits_amt : total number of bits to quantize input value
+% range : quantization input range, i.e. [min_in, max_in]
+
+  q_lev = 2^bits_amt;
+  range_max = range(2);
+  range_min = range(1);
+  step = (range_max-range_min) / q_lev;
+  offset = 0.5*step;  % quantize step offset
+  % min and max value clamping
+  val(val>range_max) = range_max;
+  val(val<range_min) = range_min;
+
+  % quantization
+  adc_sig = range_min + round((val-range_min)./step)*step;
+  % adc_sig(adc_sig>range_max-offset) = range_max-step;
+
+end
+
+
 % Gaussian Filter
 function g_filter = Gfilter(BT, M, Tb)
-  t = [-64:64];
-  B = BT/Tb;
-  C = sqrt(2*pi/log10(2)) * B;
-  g_filter = C*exp(-2*(pi^2)/log10(2)*(BT/M)^2*(t.^2));
+  t = [-128:128];
+  % B = BT/Tb;
+  C = sqrt(2*pi/log(2));
+  g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
   g_filter = g_filter ./ sqrt(sum(g_filter.^2));
 end
 

@@ -50,6 +50,14 @@ function [y,t] = srrc_pulse(T,A,a)
   end
 end
 
+% Gaussian Filter
+function g_filter = Gfilter(BT, M, Tb)
+  t = [-64:64];
+  B = BT/Tb;
+  C = sqrt(2*pi/log(2)) * B;
+  g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
+  g_filter = g_filter ./ sqrt(sum(g_filter.^2));
+end
 % ------------- AWGN ------------------------------
 function y = add_awgn_noise(x,SNR_DB)
   L = length(x)

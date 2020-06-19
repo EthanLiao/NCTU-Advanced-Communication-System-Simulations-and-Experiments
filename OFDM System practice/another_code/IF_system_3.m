@@ -1,5 +1,5 @@
 clf;close all;clear all
-N = 2000;
+N = 5000;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
@@ -26,22 +26,33 @@ t_DMA_sig = t_DMA_sig(group_delay:end);
 
 % modulatoin with carrier
 t = [0:length(t_DMA_sig)-1];
+
+%%%%%%%%%%%
 carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency/freq_DMA*t);
+%%%%%%%%%%%
+
 sig_with_carrier = real(t_DMA_sig .* carrier);
 
 % IF Band
 t_vec = [1:length(sig_with_carrier)];
+
+%%%%%%%%%%%
 carrier = cos(2*pi*(carrier_frequency-IF_frequency)/freq_DMA*t_vec);
+%%%%%%%%%%%
 
 IF_sig = sig_with_carrier .* carrier;
+
 r_DMA_f_sig = filter(IIR_filter,IF_sig);
 r_DMA_f_sig = r_DMA_f_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_f_sig,f_DMA);
 
 % demodulatoin with IF carrier
 t = [0:length(r_DMA_sig)-1];
-carrier = exp(-1j*(2*pi*IF_frequency/freq_DAC*t));
+
+%%%%%%%%%%%
+carrier = sqrt(2)*exp(-1j*(2*pi*IF_frequency/freq_DAC*t));
 demod_sig = real(r_DMA_sig .* carrier);
+%%%%%%%%%%%
 
 % demodulation
 r_ADC_f_sig = conv(demod_sig,srrc_16);

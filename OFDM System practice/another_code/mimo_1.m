@@ -1,6 +1,9 @@
 clf;clear all;close all;
 
 N = 1000;
+
+% first way to generate signal
+
 sig_1 = randi([0,1],1,N);
 sig_1((sig_1==0)) = -1;
 
@@ -9,14 +12,21 @@ sig_2((sig_2==0)) = -1;
 
 sig = [sig_1 ; sig_2];
 
+% second way to generate signal
+%%%%%%%%%%%
+sig = randi([0 1],2,N);
+sig(sig==0) = -1;
+%%%%%%%%%%%
 
 % 2x2 System
 H = randn(2,2);
+%%%%%%%%%%%
 H = sqrt(1/2) * H +1j * sqrt(1/2) * H;
+%%%%%%%%%%%
 mimo_rcv = H*sig;
 
 
-SNR_DB = 5;
+SNR_DB = -10;
 % recieve signal
 mimo_rcv_1 = add_awgn_noise(mimo_rcv(1,:), SNR_DB);
 mimo_rcv_2 = add_awgn_noise(mimo_rcv(2,:), SNR_DB);
@@ -29,12 +39,17 @@ inv_H = inv(H);
 rcv_beam = inv_H * mimo_rcv;
 
 % signal detect
+%%%%%%%%%%%
 rcv_beam = real(rcv_beam);
+%%%%%%%%%%%
+
 rcv_beam(rcv_beam>0) = 1;
 rcv_beam(rcv_beam<0) = -1;
 
 % symbol error rate
+%%%%%%%%%%%
 zf_symbol_err = 1-mean(sig==rcv_beam, 'all')
+%%%%%%%%%%%
 zf_snr = SNR(sig,rcv_beam);
 
 % Zero forcing
@@ -48,7 +63,9 @@ subplot(2,2,4);stem(rcv_beam(2,:));title("ZF recieved signal branch 2");
 % MMSE Dectector
 % calculate Signal to noise power ratio : sigm
 
+%%%%%%%%%%%
 sigm = 10^(SNR_DB/10);
+%%%%%%%%%%%
 
 W = inv(H'*H + 1/sigm * eye(2))*H';
 mmse_rcv_beam = W * mimo_rcv;
@@ -79,7 +96,9 @@ function y = add_awgn_noise(x,SNR_DB)
   if isreal(x)
     n = sqrt(N0) * randn(1,L);
   else
+    %%%%%%%%%%%
     n = sqrt(N0/2) * (randn(1,L)+i*randn(1,L));
+    %%%%%%%%%%%
   end
   y = x + n;
 end

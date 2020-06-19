@@ -1,11 +1,11 @@
 clf;clear all;close all;
 
 % Causal System
-imp = [1 ; zeros(49,1)];
+imp = [1 zeros(1,49)];
 zero = 1;
 pole = [1, -1.2, -0.25, 0.3];
 h = filter(zero, pole, imp);
-stem(0:49,h)
+stem(h);
 
 tap = zeros(1,19);
 N = 10;
@@ -28,14 +28,18 @@ L = length(equalized_signal);
 w = 120/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
+
+% figure()
+% stem(equalized_signal);
 group_delay = 126;
-gain = 1/0.023041;
-equalized_signal = equalized_signal(group_delay:end)*gain;
+equalized_signal = equalized_signal(group_delay:end);
+
+
 equalized_signal = equalized_signal(1:60);
-equalized_signal = equalized_signal/max(equalized_signal);
+equalized_signal = equalized_signal / max(equalized_signal);
 
 snr_non_AWGN = SNR(signal,equalized_signal)
-
+figure();
 subplot(3,1,1);stem(signal);title('Transmitted Signal');grid on;
 subplot(3,1,2);stem(ISI_signal);title('Recieced signal');grid on;
 subplot(3,1,3);stem(equalized_signal);title('Recover Causal');grid on;
@@ -64,7 +68,7 @@ equalized_signal = equalized_signal(1:60);
 equalized_signal = equalized_signal/max(equalized_signal);
 snr_AWGN = SNR(signal,equalized_signal)
 
-figure()
+figure();
 subplot(3,1,1);stem(signal);title('AWGN Transmitted Signal');grid on;
 subplot(3,1,2);stem(ISI_signal);title('AWGN Recieced signal');grid on;
 subplot(3,1,3);stem(equalized_signal);title('AWGN Recover Causal');grid on;
@@ -91,7 +95,10 @@ function trans_sig = trans_branch(sig)
   t_DAC_sig = conv(DAC(sig, f_DAC), srrc_5, 'same');
   t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_4, 'same');
   t = [0:length(t_DMA_sig)-1];
+
+  %%%%%%%%%%%%%%
   trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/fs*t));
+  %%%%%%%%%%%%%%
 end
 
 function rcv_sig = recieve_branch(demod_sig)
