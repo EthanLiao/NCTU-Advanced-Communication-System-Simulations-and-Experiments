@@ -3,8 +3,7 @@ clf;clear all;close all;
 % notice that fb fd fIF should be normalized
 fb = 1*10^6;        % data rate
 fc = 2.4*10^9/fb;   % data band
-% fd = 41*150*10^3/fb;
-fd = 1*150*10^3/fb;
+fd = 16*150*10^3/fb;
 fIF = 2*10^6/fb;
 f_DAC = 16*10^6/fb;
 f_DMA = 64*10^6/fb;
@@ -12,65 +11,60 @@ fb = fb/fb;
 Tb = 1/fb;
 BT = 0.5;
 
-N = 256;
+N = 20;
 signal = randi([0 1],1,N);
 signal(signal==0) = -1;
 
-gau_filter = Gfilter(BT,f_DAC,Tb/f_DAC);
-gau_delay = (length(gau_filter)-1)/2;
-figure()
-plot(gau_filter);title("Gaussian filter");
+load('./filter/CPFSK_IIR');
+group_delay = 11;
 
-srrc_16 = srrc_pulse(f_DAC,10,1);
-srrc_16_delay = (length(srrc_16)-1)/2;
+gau_filter = Gfilter(BT,f_DAC);
+gau_delay = (length(gau_filter)-1)/2;
+
+% figure()
+% plot(gau_filter);title("Gaussian filter");
 
 srrc_4 = srrc_pulse(f_DMA/f_DAC,10,1);
 srrc_4_delay = (length(srrc_4)-1)/2;
 
 % Gaussian filter
 t_DAC_sig = DAC(signal, f_DAC/fb);
-g_sig = conv(t_DAC_sig, gau_filter, 'same');
-
-% g_sig = g_sig(gau_delay+1:end-gau_delay);
-% g_sig = g_sig / max(g_sig);
+g_sig = conv(t_DAC_sig, gau_filter);
+g_sig = g_sig(gau_delay+1:end-gau_delay);
+g_sig = g_sig / max(g_sig);
 
 % sum
+%%%%%%%%%%
 for i = 1:length(g_sig)
   sum_gsig(i) = sum(g_sig(1:i));
 end
+%%%%%%%%%%
+
+%%%%%%%%%%
 cp_sig = exp(1j*2*pi*fd*1/(fb*f_DAC)*sum_gsig);
+%%%%%%%%%%
 
 
 
 % IF modulation
+
+%%%%%%%%%%
 t = [0:length(cp_sig)-1];
 IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC*fb)*t));
+%%%%%%%%%%
 
 
 % DAC/F
-t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4, 'same');
-% t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-% t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
+t_DMA_sig = filter(CPFSK_IIR,DAC(IF_sig,f_DMA/f_DAC));
+t_DMA_sig = t_DMA_sig(group_delay:end);
+t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
-% modulation with Carrier
-t = [0:length(t_DMA_sig)-1];
-carrier = exp(1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
-carrier_sig = t_DMA_sig .*carrier;
-
-% AWGN
-SNR_DB = 1;
-noise_sig = AWGN(carrier_sig,SNR_DB);
-
-% demodulation
-t = [0:length(noise_sig)-1];
-carrier = exp(-1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
-demod_sig = noise_sig.*carrier;
 
 % F/ADC
-r_DMA_sig = conv(t_DMA_sig, srrc_4);
-r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+r_DMA_sig = filter(CPFSK_IIR, t_DMA_sig);
+r_DMA_sig = r_DMA_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
-% r_DMA_sig = real_ADC(r_DMA_sig, 6,[min(r_DMA_sig),max(r_DMA_sig)]);
+r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
 % IF demodulation
 t = [0:length(r_DMA_sig)-1];
@@ -79,31 +73,37 @@ dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/(f_DAC/fb)*t);
 % F/PH
 re_srrc = conv(dmod_IF_sig,srrc_4);
 re_srrc = re_srrc(srrc_4_delay+1:end-srrc_4_delay);
-% re_srrc = re_srrc/max(re_srrc);
+re_srrc = re_srrc / max(re_srrc);
 
 
-% phase and diff
+% phase and diff v_1
+% re_phase = phase(re_srrc);
+% re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fb);
+% for i = 2:length(re_phase)
+%   re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fb);
+% end
+
+% phase and diff v_2
+%%%%%%%%%%
 re_phase = phase(re_srrc);
-re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fb);
-for i = 2:length(re_phase)
-  re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fb);
-end
+re_phase_diff = zeros(1,length(re_phase));
+re_phase_diff(1) = re_phase(1);
+re_phase_diff(2:end) = re_phase(2:end)-re_phase(1:end-1);
+%%%%%%%%%%
 
 % Gaussian Filter and ADC
 r_sig = conv(re_phase_diff, gau_filter);
 r_sig = r_sig(gau_delay+1:end-gau_delay);
-
 r_sig = ADC(r_sig, f_DAC/fb);
-
-% r_sig = real_ADC(r_sig, 6,[min(r_sig),max(r_sig)]);
-
+r_sig = r_sig / max(r_sig);
 r_sig(r_sig<0) = -0.5;
 r_sig(r_sig>0) = 0.5;
+
 
 figure()
 stem(signal)
 hold on
-stem(r_sig);title('Recieved signal');
+stem(r_sig);title('Signal');
 legend('transmitted','recieved');
 
 
@@ -112,7 +112,6 @@ plot(phase(cp_sig));
 hold on
 plot(phase(re_srrc));
 title("phase comparison");
-legend("transmitted phase","recieved phase");
 
 figure()
 plot(abs(fftshift(fft(cp_sig))));
@@ -126,20 +125,14 @@ legend("modulated", "demodulated");
 figure()
 [px, f] = pwelch(t_DMA_sig,[],[],[],1);
 freq_domain = 10*log10(px);
-N = 500;
-plot(f(1:N),freq_domain(1:N));
+plot(f,freq_domain);
 title("spectrum mask");
 hold on;
-center = max(10*log10(px));
 
-% , 0.01:3/64
-freq_vec = [0.5/64:0.001:1/64 1/64:0.001:2/64 2/64:0.001:3/64 3/64:0.001:3.5/64 3.5/64:0.001:4.5/64 4.5/64:0.001:5.5/64];
-spec_vec = [(center-26)*ones(1,8) center*ones(1,16) center*ones(1,16) (center-26)*ones(1,8) (center-46)*ones(1,16) (center-66)*ones(1,16)];
+center = max(10*log10(px));
+freq_vec = [0:0.001:0.5/64 0.5/64:0.001:1/64 1/64:0.001:3/64 3/64:0.001:3.5/64 3.5/64:0.001:4.5/64 4.5/64:0.001:5.5/64];
+spec_vec = [(center-46)*ones(1,8) (center-26)*ones(1,8) center*ones(1,32) (center-26)*ones(1,8) (center-46)*ones(1,16) (center-66)*ones(1,16)];
 plot(freq_vec, spec_vec);
-hold on;
-% hold on;
-% freq_vec = [2/64 3/64 3.5/64 4.5/64]
-% spec_vec = [center center-26 center-46 center-86];
 
 
 function y = AWGN(x,N_dB)
@@ -189,9 +182,8 @@ end
 
 
 % Gaussian Filter
-function g_filter = Gfilter(BT, M, Tb)
+function g_filter = Gfilter(BT, M)
   t = [-128:128];
-  % B = BT/Tb;
   C = sqrt(2*pi/log(2));
   g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
   g_filter = g_filter ./ sqrt(sum(g_filter.^2));

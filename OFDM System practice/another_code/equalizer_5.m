@@ -9,23 +9,28 @@ stem(h);
 
 tap = zeros(1,19);
 N = 10;
-signal = [1 zeros(1,19) 1 zeros(1,19) 1 zeros(1,19)];
+% signal = [1 tap 1 tap 1 tap];
+signal = [];
+for i = 1:3
+  signal = [signal 1 tap];
+end
+
 SNR_DB = 20;
-multipath = [1, tap, -1.2, tap, -0.25, tap, 0.3];
+multipath = [1 tap -1.2 tap -0.25 tap 0.3];
 
 ADD_AWGN = false;
-ISI_signal = real(ISI_system(signal, multipath, ADD_AWGN, SNR_DB));
+ISI_signal = ISI_system(signal, multipath, ADD_AWGN, SNR_DB);
 
 L = length(ISI_signal);
-h = (-120/56)*((1/2).^[0:L-1]);
+h = (-20/56)*((1/2).^[0:L-1]);
 equalized_signal = conv(ISI_signal,h);
 
 L = length(equalized_signal);
-w = 120*36/(119*5)*(6/5)*((6/5).^[-L:-1]);
+w = 20*36/(119*5)*(6/5)*((6/5).^[-L:-1]);
 equalized_signal = conv(equalized_signal,w);
 
 L = length(equalized_signal);
-w = 120/(68*2)*((-1/2).^[0:L-1]);
+w = 20/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
 
@@ -39,6 +44,7 @@ equalized_signal = equalized_signal(1:60);
 equalized_signal = equalized_signal / max(equalized_signal);
 
 snr_non_AWGN = SNR(signal,equalized_signal)
+
 figure();
 subplot(3,1,1);stem(signal);title('Transmitted Signal');grid on;
 subplot(3,1,2);stem(ISI_signal);title('Recieced signal');grid on;
@@ -50,15 +56,15 @@ ADD_AWGN = true;
 ISI_signal = real(ISI_system(signal, multipath, ADD_AWGN, SNR_DB));
 
 L = length(ISI_signal);
-h = (-120/56)*((1/2).^[0:L-1]);
+h = (-20/56)*((1/2).^[0:L-1]);
 equalized_signal = conv(ISI_signal,h);
 
 L = length(equalized_signal);
-w = 120*36/(119*5)*(5/6)*((6/5).^[-L:-1]);
+w = 20*36/(119*5)*(5/6)*((6/5).^[-L:-1]);
 equalized_signal = conv(equalized_signal,w);
 
 L = length(equalized_signal);
-w = 120/(68*2)*((-1/2).^[0:L-1]);
+w = 20/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
 group_delay = 126;
@@ -117,6 +123,7 @@ function rcv_sig = recieve_branch(demod_sig)
 
   r_DAC_sig = conv(r_DMA_sig,srrc_5, 'same');
   rcv_sig = ADC(r_DAC_sig,f_DAC);
+  rcv_sig = real(rcv_sig);
 end
 
 function DAC_sig = DAC(origin_signal,up_factor)
