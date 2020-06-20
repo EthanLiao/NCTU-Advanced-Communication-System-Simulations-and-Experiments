@@ -53,7 +53,7 @@ subplot(3,1,3);stem(equalized_signal);title('Recover Causal');grid on;
 
 % add awgn
 ADD_AWGN = true;
-ISI_signal = real(ISI_system(signal, multipath, ADD_AWGN, SNR_DB));
+ISI_signal = ISI_system(signal, multipath, ADD_AWGN, SNR_DB);
 
 L = length(ISI_signal);
 h = (-20/56)*((1/2).^[0:L-1]);
@@ -67,8 +67,12 @@ L = length(equalized_signal);
 w = 20/(68*2)*((-1/2).^[0:L-1]);
 equalized_signal = conv(equalized_signal,w);
 
+
+figure();
+stem(equalized_signal);
+title("test");
+
 group_delay = 126;
-% gain = 1/0.023041;
 equalized_signal = equalized_signal(group_delay:end);
 equalized_signal = equalized_signal(1:60);
 equalized_signal = equalized_signal/max(equalized_signal);
@@ -92,39 +96,115 @@ end
 
 function trans_sig = trans_branch(sig)
   % modulatoin part
-  fc = 16*10^6;
-  fs = 64*10^6;
-  f_DAC = 5;
-  f_DMA = 4;
-  srrc_4 =srrc_pulse(4, 5, 1);
-  srrc_5 =srrc_pulse(5, 5, 1);
-  t_DAC_sig = conv(DAC(sig, f_DAC), srrc_5, 'same');
-  t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_4, 'same');
+  fc = 32*10^6;
+  freq_DAC = 16*10^6;
+  freq_DMA = 128*10^6;
+
+  f_DAC = 3;
+  f_DMA = 7;
+
+  srrc_16 =srrc_pulse(f_DAC, 5, 0.3);
+  srrc_8 =srrc_pulse(f_DMA, 5, 0.3);
+  srrc_16_delay = (length(srrc_16)-1)/2;
+  srrc_8_delay = (length(srrc_8)-1)/2;
+
+  t_DAC_sig = conv(DAC(sig, f_DAC), srrc_16);
+  t_DAC_sig = t_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
+  % t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+
+  t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_8);
+  t_DMA_sig = t_DMA_sig(srrc_8_delay+1:end-srrc_8_delay);
+  % t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+
   t = [0:length(t_DMA_sig)-1];
 
   %%%%%%%%%%%%%%
-  trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/fs*t));
+  trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/freq_DMA*t));
   %%%%%%%%%%%%%%
 end
 
 function rcv_sig = recieve_branch(demod_sig)
-  fc = 16*10^6;
-  fs = 64*10^6;
-  f_DAC = 5;
-  f_DMA = 4;
-  srrc_4 =srrc_pulse(4, 5, 1);
-  srrc_5 =srrc_pulse(5, 5, 1);
+  fc = 32*10^6;
+  freq_DAC = 16*10^6;
+  freq_DMA = 128*10^6;
+
+  f_DAC = 3;
+  f_DMA = 7;
+
+  srrc_16 =srrc_pulse(f_DAC, 5, 0.3);
+  srrc_8 =srrc_pulse(f_DMA, 5, 0.3);
+  srrc_16_delay = (length(srrc_16)-1)/2;
+  srrc_8_delay = (length(srrc_8)-1)/2;
 
   t = [0:length(demod_sig)-1];
-  demod_sig = demod_sig .* exp(-j*2*pi*fc/fs*t);
+  demod_sig = demod_sig .* exp(-j*2*pi*fc/freq_DMA*t);
 
-  f_sig = conv(demod_sig, srrc_4, 'same');
-  r_DMA_sig = ADC(f_sig,f_DMA);
+  r_DMA_sig = conv(demod_sig, srrc_8);
+  r_DMA_sig = r_DMA_sig(srrc_8_delay+1:end-srrc_8_delay);
+  r_DMA_sig = ADC(r_DMA_sig,f_DMA);
+  % r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
-  r_DAC_sig = conv(r_DMA_sig,srrc_5, 'same');
-  rcv_sig = ADC(r_DAC_sig,f_DAC);
+  r_DAC_sig = conv(r_DMA_sig, srrc_16);
+  r_DAC_sig = r_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
+  rcv_sig = ADC(r_DAC_sig, f_DAC);
   rcv_sig = real(rcv_sig);
 end
+
+% function trans_sig = trans_branch(sig)
+%   % modulatoin part
+%   fc = 16*10^6;
+%   freq_DAC = 16*10^6;
+%   freq_DMA = 64*10^6;
+%
+%   f_DAC = 5;
+%   f_DMA = 4;
+%
+%   srrc_5 =srrc_pulse(5, 5, 0.3);
+%   srrc_4 =srrc_pulse(4, 5, 0.3);
+%   srrc_5_delay = (length(srrc_5)-1)/2;
+%   srrc_4_delay = (length(srrc_4)-1)/2;
+%
+%   t_DAC_sig = conv(DAC(sig, f_DAC), srrc_5);
+%   t_DAC_sig = t_DAC_sig(srrc_5_delay+1:end-srrc_5_delay);
+%   % t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+%
+%   t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_4);
+%   t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+%   % t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+%
+%   t = [0:length(t_DMA_sig)-1];
+%
+%   %%%%%%%%%%%%%%
+%   trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/freq_DMA*t));
+%   %%%%%%%%%%%%%%
+% end
+%
+% function rcv_sig = recieve_branch(demod_sig)
+%   fc = 16*10^6;
+%   freq_DAC = 16*10^6;
+%   freq_DMA = 64*10^6;
+%
+%   f_DAC = 5;
+%   f_DMA = 4;
+%
+%   srrc_5 =srrc_pulse(5, 5, 0.3);
+%   srrc_4 =srrc_pulse(4, 5, 0.3);
+%   srrc_5_delay = (length(srrc_5)-1)/2;
+%   srrc_4_delay = (length(srrc_4)-1)/2;
+%
+%   t = [0:length(demod_sig)-1];
+%   demod_sig = demod_sig .* exp(-j*2*pi*fc/freq_DMA*t);
+%
+%   r_DMA_sig = conv(demod_sig, srrc_4);
+%   r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+%   r_DMA_sig = ADC(r_DMA_sig,f_DMA);
+%   % r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+%
+%   r_DAC_sig = conv(r_DMA_sig, srrc_5);
+%   r_DAC_sig = r_DAC_sig(srrc_5_delay+1:end-srrc_5_delay);
+%   rcv_sig = ADC(r_DAC_sig, f_DAC);
+%   rcv_sig = real(rcv_sig);
+% end
 
 function DAC_sig = DAC(origin_signal,up_factor)
   DAC_sig = zeros(1,up_factor*length(origin_signal));

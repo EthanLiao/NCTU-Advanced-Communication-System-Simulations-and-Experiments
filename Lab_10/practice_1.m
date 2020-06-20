@@ -16,8 +16,8 @@ group_delay = 3;
 srrc_16 = srrc_pulse(16,5,0.3);
 srrc_16_len = length(srrc_16);
 
-mod_sig_real = trans_branch(real(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay);
-mod_sig_imag = trans_branch(imag(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay);
+mod_sig_real = trans_branch(real(sig), f_DAC, srrc_16, f_DMA,IIR_filter, group_delay);
+mod_sig_imag = trans_branch(imag(sig), f_DAC, srrc_16, f_DMA,IIR_filter, group_delay);
 
 % modulatoin with carrier
 t = [0:length(mod_sig_real)-1];
@@ -54,25 +54,29 @@ scatterplot(rcv_sig*2.5,1,0,'k*',original_sig)
 
 function trans_sig = trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
   % modulatoin part
+  srrc_delay = (length(srrc)-1)/2;
+
   t_DAC_sig = conv(DAC(sig,f_DAC),srrc);
-  srrc_len = length(srrc);
-  t_DAC_sig = t_DAC_sig((srrc_len-1)/2+1:end-(srrc_len-1)/2);
+  t_DAC_sig = t_DAC_sig(srrc_delay+1:end-srrc_delay);
   t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
-;
+
   trans_sig = filter(IIR_filter,DAC(t_DAC_sig,f_DMA));
   trans_sig = trans_sig(group_delay:end);
-  % trans_sig = trans_sig /(max(trans_sig))
+  trans_sig = trans_sig /(max(trans_sig));
 end
 
 function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_delay)
+
   f_sig = filter(IIR_filter,demod_sig);
   f_sig = f_sig(group_delay:end);
-  r_DMA_sig = ADC(f_sig,f_DMA);
-  r_DAC_sig = conv(r_DMA_sig,srrc);
-  L = length(srrc)
-  r_DAC_sig = r_DAC_sig((L-1)/2+1:end-(L-1)/2);
-  r_DAC_sig = r_DAC_sig / max(abs(r_DAC_sig));
+  f_sig = ADC(f_sig,f_DMA);
+  f_sig = f_sig / max(f_sig);
+
+  srrc_delay = (length(srrc)-1)/2;
+  r_DAC_sig = conv(f_sig,srrc);
+  r_DAC_sig = r_DAC_sig(srrc_delay+1:end-srrc_delay);
   rcv_sig = ADC(r_DAC_sig,f_DAC);
+  rcv_sig = rcv_sig / max(rcv_sig);
 end
 
 function DAC_sig = DAC(origin_sig,up_factor)

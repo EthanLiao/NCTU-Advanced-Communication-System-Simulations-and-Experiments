@@ -27,6 +27,7 @@ subplot(2,1,2);stem(rcv_sig);title('Recieved Signal');grid on;
 function trans_sig = trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
   % modulatoin part
   srrc_delay = (length(srrc)-1)/2;
+
   %%%%%%%%%%%
   t_DAC_sig = conv(DAC(sig,f_DAC),srrc);
   t_DAC_sig = t_DAC_sig(srrc_delay+1:end-srrc_delay);
@@ -43,13 +44,12 @@ end
 function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_delay)
   f_sig = filter(IIR_filter,demod_sig);
   f_sig = f_sig(group_delay:end);
-  f_sig = f_sig / max(f_sig);
   f_sig = ADC(f_sig,f_DMA);
+  f_sig = f_sig / max(f_sig);
 
   srrc_delay = (length(srrc)-1)/2;
   r_DAC_sig = conv(f_sig,srrc);
   r_DAC_sig = r_DAC_sig(srrc_delay+1:end-srrc_delay);
-  r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
   rcv_sig = ADC(r_DAC_sig,f_DAC);
 
   % Be caution that we should modify gain here

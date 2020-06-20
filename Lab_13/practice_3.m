@@ -132,7 +132,8 @@ function y = add_awgn_noise(x,SNR_DB)
   L = length(x);
   % calculate symbol energy
   SNR_N = 10^(SNR_DB/10); % SNR enery to linear scale
-  SYME = sum(abs(x).^2) / L;
+  % SYME = sum(abs(x).^2) / L;
+  SYME = mean(abs(x).^2);
   N0 = SYME / SNR_N;      % Noise spectral Density
   if isreal(x)
     n = sqrt(N0) * randn(1,L);

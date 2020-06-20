@@ -3,13 +3,12 @@ N = 5000;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
-symbol_rate = 1*10^6;
-carrier_frequency = 32*10^6;
-IF_frequency = 2*10^6;
+fb = 1*10^6;
+fc = 32*10^6;
+fIF = 2*10^6;
 freq_DAC = 16*10^6;
 freq_DMA = 128*10^6;
-
-f_DAC = freq_DAC/symbol_rate;
+f_DAC = freq_DAC/fb;
 f_DMA = freq_DMA/freq_DAC;
 
 srrc_16 = srrc_pulse(16, 5, 0.3);
@@ -20,24 +19,25 @@ group_delay = 7;
 % modulatoin part
 t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16);
 t_DAC_sig = t_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
+t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
 
 t_DMA_sig = filter(IIR_filter,DAC(t_DAC_sig, f_DMA));
 t_DMA_sig = t_DMA_sig(group_delay:end);
+t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
 % modulatoin with carrier
 t = [0:length(t_DMA_sig)-1];
 
 %%%%%%%%%%%
-carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency/freq_DMA*t);
-%%%%%%%%%%%
-
+carrier = sqrt(2)*exp(1j*2*pi*fc/freq_DMA*t);
 sig_with_carrier = real(t_DMA_sig .* carrier);
+%%%%%%%%%%%
 
 % IF Band
 t_vec = [1:length(sig_with_carrier)];
 
 %%%%%%%%%%%
-carrier = cos(2*pi*(carrier_frequency-IF_frequency)/freq_DMA*t_vec);
+carrier = cos(2*pi*(fc-fIF)/freq_DMA*t_vec);
 %%%%%%%%%%%
 
 IF_sig = sig_with_carrier .* carrier;
@@ -45,12 +45,13 @@ IF_sig = sig_with_carrier .* carrier;
 r_DMA_f_sig = filter(IIR_filter,IF_sig);
 r_DMA_f_sig = r_DMA_f_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_f_sig,f_DMA);
+r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
 % demodulatoin with IF carrier
 t = [0:length(r_DMA_sig)-1];
 
 %%%%%%%%%%%
-carrier = sqrt(2)*exp(-1j*(2*pi*IF_frequency/freq_DAC*t));
+carrier = sqrt(2)*exp(-1j*(2*pi*fIF/freq_DAC*t));
 demod_sig = real(r_DMA_sig .* carrier);
 %%%%%%%%%%%
 
@@ -92,7 +93,7 @@ end
 
 function snr = SNR(tr_sig,rcv_sig)
   if isreal(tr_sig)
-    snr = 10*log10(mean(rcv_sig.^2)/mean((rcv_sig-tr_sig).^2));
+    snr = 10*log10(mean(abs(rcv_sig).^2)/mean(abs(rcv_sig-tr_sig).^2));
   else
     snr = 10*log10(mean(abs(rcv_sig).^2)/mean(abs(rcv_sig-tr_sig).^2));
   end
