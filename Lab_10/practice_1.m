@@ -1,7 +1,7 @@
 clf;clear all; close all;
 
 % Generate qpsk signal
-N = 1000;
+N = 10;
 sig = sign(randn(1,N))+j*sign(randn(1,N));
 load('IIR_filter');
 

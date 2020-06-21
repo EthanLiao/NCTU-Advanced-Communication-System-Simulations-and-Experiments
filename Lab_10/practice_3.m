@@ -1,7 +1,7 @@
 clf;clear all; close all;
 
 % Generate qpsk signal
-N = 1024;
+N = 20;
 sig = sign(randn(1,N))+j*sign(randn(1,N));
 
 load('IIR_filter');
@@ -42,7 +42,7 @@ sig_with_carrier = im_sig_real.*carrier_cos+im_sig_imag.*(-carrier_sin);
 
 % CFO
 t = [0:length(sig_with_carrier)-1];
-cfo = 0.001*fc
+cfo = 0.001*fc;
 carrier_cos_cfo = sqrt(2)*cos(2*pi*(fc+cfo)/fs*t);
 carrier_sin_cfo = sqrt(2)*sin(2*pi*(fc+cfo)/fs*t);
 
@@ -52,31 +52,55 @@ demod_sig_imag = sig_with_carrier .* (-carrier_sin_cfo);
 
 rcv_sig_real = recieve_branch(demod_sig_real,f_DMA,IIR_filter,f_DAC,srrc_16,group_delay);
 rcv_sig_imag = recieve_branch(demod_sig_imag,f_DMA,IIR_filter,f_DAC,srrc_16,group_delay);
-
-
 scatterplot(rcv_sig_real+1j*rcv_sig_imag);
+
+% correlate the incorrect signal
+
+rcv_sig = rcv_sig_real + 1j*rcv_sig_imag;
+
+cfo_rcv_sig = rcv_sig;
+cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)>0) = 1+1j;
+cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)<0) = 1-1j;
+cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)>0) = -1+1j;
+cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)<0) = -1-1j;
+
+[cfo_per,cfo_db] = EVM(cfo_rcv_sig,sig);
+rcv_sig = sqrt(2)*rcv_sig.*exp(1j*2*pi*cfo_per*fc/(10^6)*[0:length(rcv_sig)-1]);
+
+figure()
+subplot(2,1,1);stem(real(sig));hold on;stem(rcv_sig_real);title("non comp real signal")
+subplot(2,1,2);stem(imag(sig));hold on;stem(rcv_sig_imag);title("non comp imag signal")
+
+
+figure();
+subplot(2,1,1);stem(real(sig));hold on;stem(real(rcv_sig));title("comp real signal")
+subplot(2,1,2);stem(imag(sig));hold on;stem(imag(rcv_sig));title("comp imag signal")
+
+
 
 function trans_sig = trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
   % modulatoin part
+  srrc_delay = (length(srrc)-1)/2;
   t_DAC_sig = conv(DAC(sig,f_DAC),srrc);
-  srrc_len = length(srrc);
-  t_DAC_sig = t_DAC_sig((srrc_len-1)/2+1:end-(srrc_len-1)/2);
+  t_DAC_sig = t_DAC_sig(srrc_delay+1:end-srrc_delay);
   t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
 
   trans_sig = filter(IIR_filter,DAC(t_DAC_sig,f_DMA));
   trans_sig = trans_sig(group_delay:end);
-  % trans_sig = trans_sig /(max(trans_sig))
+  trans_sig = trans_sig /max(trans_sig);
 end
 
 function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_delay)
+
   f_sig = filter(IIR_filter,demod_sig);
   f_sig = f_sig(group_delay:end);
   r_DMA_sig = ADC(f_sig,f_DMA);
+  r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+  srrc_delay = (length(srrc)-1)/2;
   r_DAC_sig = conv(r_DMA_sig,srrc);
-  L = length(srrc);
-  r_DAC_sig = r_DAC_sig((L-1)/2+1:end-(L-1)/2);
-  r_DAC_sig = r_DAC_sig / max(abs(r_DAC_sig));
+  r_DAC_sig = r_DAC_sig(srrc_delay+1:end- srrc_delay);
   rcv_sig = ADC(r_DAC_sig,f_DAC);
+  rcv_sig = rcv_sig / max(rcv_sig);
 end
 
 function DAC_sig = DAC(origin_sig,up_factor)
@@ -98,4 +122,9 @@ function [y,t] = srrc_pulse(T,A,a)
   else
     y = 1/T * sin(pi.*t./T) ./ (pi*t./T);
   end
+end
+
+function [EVM_per,EVM_dB] = EVM(real_sig, ideal_sig)
+  EVM_per = sqrt(mean(abs(ideal_sig-real_sig).^2)/mean(abs(ideal_sig).^2)) / 100;
+  EVM_dB = 10*log10(mean(abs(ideal_sig-real_sig).^2)/mean(abs(ideal_sig).^2));
 end

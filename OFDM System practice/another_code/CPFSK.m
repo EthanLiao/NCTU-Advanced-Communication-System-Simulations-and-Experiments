@@ -3,7 +3,7 @@ clf;clear all;close all;
 % notice that fb fd fIF should be normalized
 fb = 1*10^6;        % data rate
 fc = 2.4*10^9/fb;   % data band
-fd = 16*150*10^3/fb;
+fd = 1*150*10^3/fb;
 fIF = 2*10^6/fb;
 f_DAC = 16*10^6/fb;
 f_DMA = 64*10^6/fb;
