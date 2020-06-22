@@ -1,7 +1,7 @@
 clf; clear all; close all;
 
 fb = 1e6;
-fd = 1*150e3 /fb;
+fd = 18*150e3 /fb;
 fIF = 2e6 / fb;
 freq_DAC = 16e6;
 freq_DMA = 64e6;
@@ -18,10 +18,11 @@ g_filter = Gfilter(BT, f_DAC);
 g_delay = (length(g_filter)-1)/2;
 
 load('./filter/CPFSK_IIR')
-group_delay = 10;
+group_delay = 7;
 
 srrc_4 = rcosine(1,4,'fir/sqrt',0.3,5);
 srrc_4_delay = (length(srrc_4)-1)/2;
+srrc_4 = srrc_4 / sum(sqrt(srrc_4.^2));
 
 g_sig = conv(g_filter, DAC(sig, f_DAC));
 g_sig = g_sig(g_delay+1:end-g_delay);
@@ -38,11 +39,19 @@ t_DMA_sig = filter(CPFSK_IIR, DAC(IF_sig, f_DMA));
 t_DMA_sig = t_DMA_sig(group_delay:end);
 t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
+% t_DMA_sig = conv(srrc_4, DAC(IF_sig, f_DMA));
+% t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+% t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+
 % reciever
 r_DMA_sig = filter(CPFSK_IIR, t_DMA_sig);
 r_DMA_sig = r_DMA_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_sig, f_DMA);
 r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+% r_DMA_sig = conv(srrc_4 , t_DMA_sig);
+% r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+% r_DMA_sig = ADC(r_DMA_sig, f_DMA);
+% r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
 r_fIF = r_DMA_sig.*exp(-1j*2*pi*fIF/f_DAC*[0:length(r_DMA_sig)-1]);
 
