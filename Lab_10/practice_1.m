@@ -1,12 +1,12 @@
 clf;clear all; close all;
 
 % Generate qpsk signal
-N = 10;
+N = 1000;
 sig = sign(randn(1,N))+j*sign(randn(1,N));
 load('IIR_filter');
 
 fc = 16*10^6;
-fs = 64*10^6;
+freq_DMA = 64*10^6;
 f_DAC = 16;
 f_DMA = 4;
 g = 1;
@@ -14,18 +14,16 @@ phi = pi/3;
 group_delay = 6;
 
 srrc_16 = srrc_pulse(16,5,0.3);
-srrc_16_len = length(srrc_16);
 
-mod_sig_real = trans_branch(real(sig), f_DAC, srrc_16, f_DMA,IIR_filter, group_delay);
-mod_sig_imag = trans_branch(imag(sig), f_DAC, srrc_16, f_DMA,IIR_filter, group_delay);
+mod_sig_real = trans_branch(real(sig), f_DAC, srrc_16, f_DMA, IIR_filter, group_delay);
+mod_sig_imag = trans_branch(imag(sig), f_DAC, srrc_16, f_DMA, IIR_filter, group_delay);
 
 % modulatoin with carrier
 t = [0:length(mod_sig_real)-1];
-carrier_cos = sqrt(2)*cos(2*pi*fc/fs*t);
-carrier_sin = sqrt(2)*sin(2*pi*fc/fs*t);
-carrier_sin_im = sqrt(2)*sin(2*pi*fc/fs*t+phi)*g;
+carrier_cos = sqrt(2)*cos(2*pi*fc/freq_DMA*t);
+carrier_sin = sqrt(2)*sin(2*pi*fc/freq_DMA*t);
+carrier_sin_im = sqrt(2)*sin(2*pi*fc/freq_DMA*t+phi)*g;
 
-% plot(carrier_sin_im)
 sig_with_carrier_real = mod_sig_real.*carrier_cos;
 sig_with_carrier_imag = mod_sig_imag.*(-carrier_sin_im);
 
@@ -50,7 +48,7 @@ subplot(2,1,2);stem(imag(sig));hold on;stem(rcv_sig_imag);hold on;stem(imag(comp
 rcv_sig = rcv_sig_real+ j*rcv_sig_imag;
 original_sig = scatterplot(sig,1,0,'b.');
 hold on;
-scatterplot(rcv_sig*2.5,1,0,'k*',original_sig)
+scatterplot(rcv_sig,1,0,'k*',original_sig)
 
 function trans_sig = trans_branch(sig,f_DAC,srrc,f_DMA,IIR_filter,group_delay)
   % modulatoin part

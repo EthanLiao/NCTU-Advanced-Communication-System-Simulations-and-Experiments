@@ -10,14 +10,15 @@ ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_slow, ADD_A
 L = length(ISI_signal);
 h = 0.5.^[0:L-1];
 equalized_signal = conv(ISI_signal,h);
-
+equalized_signal = equalized_signal / max(equalized_signal);
 % Non - casaul System
 ADD_AWGN = false;
 SNR_DB = 0;
 channel_gain_fast = 0.5 ; channel_gain_slow = -1;
 ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_slow, ADD_AWGN, SNR_DB));
-w = (-2)*2.^[-L:-1];
+w = 2*(-2)*2.^[-L:-1];
 causal_equalized_signal  = conv(ISI_signal,w);
+causal_equalized_signal = causal_equalized_signal / max(causal_equalized_signal);
 
 % ADD AWGN : 5 DB in non casaul system
 ADD_AWGN = true;
@@ -26,6 +27,7 @@ channel_gain_fast = 0.5 ; channel_gain_slow = -1;
 ISI_signal = real(ISI_system(signal, channel_gain_fast, channel_gain_slow, ADD_AWGN, SNR_DB));
 w = (-2)*2.^[-L:-1];
 awgn_causal_equalized_signal  = conv(ISI_signal,w);
+awgn_causal_equalized_signal = awgn_causal_equalized_signal/ max(awgn_causal_equalized_signal);
 
 subplot(5,1,1);stem(signal);title('Transmitted Signal');grid on;
 subplot(5,1,2);stem(ISI_signal);title('Recieced signal');grid on;

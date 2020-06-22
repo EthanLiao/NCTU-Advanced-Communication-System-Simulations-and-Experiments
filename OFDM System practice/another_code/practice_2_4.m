@@ -21,8 +21,12 @@ for i = 1:N
   signal = [signal 1 tap];
 end
 
+imp_sig = [1 zeros(1,49)];
 multipath = [1 tap -1.2 tap -0.25 tap 0.3];
 
+pole = [1 -1.2 -0.25 0.3];
+zero = [1];
+imp = filter(zero, pole, imp_sig);
 
 c_sig = ISI_transbranch(signal);
 c_sig = conv(c_sig, multipath);
@@ -49,6 +53,9 @@ figure()
 subplot(2,1,1);stem(signal);title("transmitted signal");
 subplot(2,1,2);stem(equalized_sig); title("equalized signal");
 
+figure()
+stem(imp);
+title("impulse response");
 function c_sig = transbranch(sig)
   % Some parametors
   fb = 1e6;

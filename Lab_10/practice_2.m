@@ -7,7 +7,7 @@ sig = sign(randn(1,N))+j*sign(randn(1,N));
 load('IIR_filter');
 
 fc = 16*10^6;
-fs = 64*10^6;
+freq_DMA = 64*10^6;
 f_DAC = 16;
 f_DMA = 4;
 g = 1.5;
@@ -23,20 +23,30 @@ mod_sig_imag = trans_branch(imag(sig),f_DAC,srrc_16,f_DMA,IIR_filter,group_delay
 
 % modulatoin with carrier
 t = [0:length(mod_sig_real)-1];
-carrier_cos = sqrt(2)*cos(2*pi*fc/fs*t);
-carrier_sin = sqrt(2)*sin(2*pi*fc/fs*t);
-carrier_sin_im = sqrt(2)*sin(2*pi*fc/fs*t+phi)*g;
+carrier_cos = sqrt(2)*cos(2*pi*fc/freq_DMA*t);
+carrier_sin = sqrt(2)*sin(2*pi*fc/freq_DMA*t);
+carrier_sin_im = sqrt(2)*sin(2*pi*fc/freq_DMA*t+phi)*g;
 
 
-% compensation
-aIE = mod_sig_real - g * sin(phi) .* mod_sig_imag;
-aQE = g * cos(phi) .* mod_sig_imag;
-% aIE = mod_sig_real
-% aQE = mod_sig_imag
+% % compensation v1
+% aIE = mod_sig_real - g * sin(phi) .* mod_sig_imag;
+% aQE = g * cos(phi) .* mod_sig_imag;
+%
+%
+% imbalance_signal = [aIE;aQE];
+% H = [1 -g*sin(phi) ; 0 g*cos(phi)];
+% compensate_sig = inv(H) * imbalance_signal;
 
-imbalance_signal = [aIE;aQE];
+% compensation v2
+imbalance_signal = [mod_sig_real ; mod_sig_real];
 H = [1 -g*sin(phi) ; 0 g*cos(phi)];
 compensate_sig = inv(H) * imbalance_signal;
+
+aIE = mod_sig_real - g * sin(phi) .* mod_sig_imag;
+aQE = g * cos(phi) .* mod_sig_imag;
+
+
+
 
 % conduct a demodulation
 im_sig_real = compensate_sig(1,:);
