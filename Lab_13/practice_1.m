@@ -31,36 +31,42 @@ rcv_beam(rcv_beam<0) = -1;
 subplot(2,1,1);stem(sig);title("transmission signal");
 subplot(2,1,2);stem(rcv_beam);title("recieved signal");
 
-function trans_sig = trans_branch(sig)
+function c_sig = trans_branch(sig)
   % modulatoin part
   fc = 16*10^6;
   fs = 64*10^6;
   f_DAC = 16;
   f_DMA = 4;
-  srrc_4 =srrc_pulse(4, 5, 1);
-  srrc_16 =srrc_pulse(16, 5, 1);
+  srrc_4 =srrc_pulse(4, 5, 0.3);
+  srrc_16 =srrc_pulse(16, 5, 0.3);
   t_DAC_sig = conv(DAC(sig, f_DAC), srrc_16, 'same');
+  t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+
   t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_4, 'same');
+  t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+
   t = [0:length(t_DMA_sig)-1];
-  trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/fs*t));
+  c_sig = real(t_DMA_sig .* exp(1j*2*pi*fc/fs*t));
 end
 
-function rcv_sig = recieve_branch(demod_sig)
+function r_DAC_sig = recieve_branch(demod_sig)
   fc = 16*10^6;
   fs = 64*10^6;
   f_DAC = 16;
   f_DMA = 4;
-  srrc_4 =srrc_pulse(4, 5, 1);
-  srrc_16 =srrc_pulse(16, 5, 1);
+  srrc_4 =srrc_pulse(4, 5, 0.3);
+  srrc_16 =srrc_pulse(16, 5, 0.3);
 
   t = [0:length(demod_sig)-1];
-  demod_sig = demod_sig .* exp(-j*2*pi*fc/fs*t);
+  demod_sig = demod_sig .* exp(-1j*2*pi*fc/fs*t);
 
   f_sig = conv(demod_sig, srrc_4, 'same');
   r_DMA_sig = ADC(f_sig,f_DMA);
+  r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
-  r_DAC_sig = conv(r_DMA_sig,srrc_16, 'same');
-  rcv_sig = ADC(r_DAC_sig,f_DAC);
+  r_DAC_sig = conv(r_DMA_sig, srrc_16, 'same');
+  r_DAC_sig = ADC(r_DAC_sig,f_DAC);
+  r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
 end
 
 function DAC_sig = DAC(origin_signal,up_factor)

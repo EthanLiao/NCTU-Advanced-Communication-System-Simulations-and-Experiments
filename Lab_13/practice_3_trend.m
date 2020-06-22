@@ -7,6 +7,10 @@ sig_2 = randi([0,1],1,N);
 sig_2((sig_2==0)) = -1;
 sig = [sig_1 ; sig_2];
 
+sig = randi([0 1], 2 ,N);
+sig(sig == 0) = -1;
+
+
 SNR_l = [-20:1:20];
 zf_snr = zeros(1,length(SNR_l));
 mmse_snr = zeros(1,length(SNR_l));
@@ -44,8 +48,8 @@ function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, 
   rcv_beam = inv_H * mimo_rcv;
   % signal detect
   rcv_beam = real(rcv_beam);
-  rcv_beam(rcv_beam>0) = 1;
-  rcv_beam(rcv_beam<0) = -1;
+  % rcv_beam(rcv_beam>0) = 1;
+  % rcv_beam(rcv_beam<0) = -1;
   % symbol error rate
   zf_symbol_err = 1-mean(sig==rcv_beam, 'all');
   zf_snr = SNR(sig,rcv_beam);
@@ -58,20 +62,11 @@ function  [zf_snr, mmse_snr, zf_symbol_err, mmse_symbol_err]= MIMO_eval(SNR_DB, 
   mmse_rcv_beam = W * mimo_rcv;
   % signal detect
   mmse_rcv_beam = real(mmse_rcv_beam);
-  mmse_rcv_beam(mmse_rcv_beam>0) = 1;
-  mmse_rcv_beam(mmse_rcv_beam<0) = -1;
+  % mmse_rcv_beam(mmse_rcv_beam>0) = 1;
+  % mmse_rcv_beam(mmse_rcv_beam<0) = -1;
   % symbol error rate
   mmse_symbol_err = 1-mean(sig==mmse_rcv_beam, 'all');
   mmse_snr = SNR(sig,mmse_rcv_beam);
-end
-
-function solution = add_awgn(X,SNR)
-    N=length(X);
-    signalPower = sum(X(1:end).^2)/N;
-    linearSNR = 10^(SNR/10);
-    [a,b]=size(X);
-    noiseMat = randn(a,b).*sqrt(signalPower/linearSNR);
-    solution = X + noiseMat;
 end
 
 function y = add_awgn_noise(x,SNR_DB)

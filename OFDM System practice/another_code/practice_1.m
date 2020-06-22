@@ -1,32 +1,32 @@
 clf;clear all;close all;
-N = 10;
+N = 1000;
 sig = randi([0 1],2,N);
 sig(sig==0) = -1;
 
 h = randn(2,2);
-H = h*(1/sqrt(2)+1/sqrt(2)*1j);
+H = h*(sqrt(1/2)+sqrt(1/2)*1j);
 
 rcv_sig = H * sig;
 
-SNR_DB = 20;
+SNR_DB = -30;
 rcv_sig_1 = add_awgn_noise(rcv_sig(1,:), SNR_DB);
 rcv_sig_2 = add_awgn_noise(rcv_sig(2,:), SNR_DB);
 rcv_sig = [rcv_sig_1 ; rcv_sig_2];
 
 % zero forcing
 zf_rcv_sig = real(inv(H) * rcv_sig);
-zf_rcv_sig(zf_rcv_sig>0) = 1;
-zf_rcv_sig(zf_rcv_sig<0) = -1;
-zf_SER = 1-mean(zf_rcv_sig==sig, 'all')
-% zf_snr = SNR(sig, zf_rcv_sig)
+% zf_rcv_sig(zf_rcv_sig>0) = 1;
+% zf_rcv_sig(zf_rcv_sig<0) = -1;
+% zf_SER = 1-mean(zf_rcv_sig==sig, 'all')
+zf_snr = SNR(sig, zf_rcv_sig)
 
 sigm = 10^(SNR_DB/10);
 % mmse
 mmse_rcv_sig = real(inv(H'*H+1/sigm*eye(2))*H'*rcv_sig);
-mmse_rcv_sig(mmse_rcv_sig>0) = 1;
-mmse_rcv_sig(mmse_rcv_sig<0) = -1;
-mmse_SER = 1-mean(mmse_rcv_sig==sig, 'all')
-% mmse_snr = SNR(sig, mmse_rcv_sig)
+% mmse_rcv_sig(mmse_rcv_sig>0) = 1;
+% mmse_rcv_sig(mmse_rcv_sig<0) = -1;
+% mmse_SER = 1-mean(mmse_rcv_sig==sig, 'all')
+mmse_snr = SNR(sig, mmse_rcv_sig)
 
 subplot(2,2,1);stem(sig(1,:));title("mmse trans branch 1");
 subplot(2,2,2);stem(sig(2,:));title("mmse trans branch 2");

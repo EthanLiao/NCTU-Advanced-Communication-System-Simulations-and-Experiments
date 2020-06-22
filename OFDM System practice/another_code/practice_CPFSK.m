@@ -1,7 +1,7 @@
 clf; clear all; close all;
 
 fb = 1e6;
-fd = 18*150e3 /fb;
+fd = 14*150e3 /fb;
 fIF = 2e6 / fb;
 freq_DAC = 16e6;
 freq_DMA = 64e6;
@@ -15,6 +15,9 @@ sig(sig==0) = -1;
 
 BT = 0.5;
 g_filter = Gfilter(BT, f_DAC);
+g_delay = (length(g_filter)-1)/2;
+
+g_filter = ones(1,9);
 g_delay = (length(g_filter)-1)/2;
 
 load('./filter/CPFSK_IIR')
@@ -33,6 +36,7 @@ for i=1:length(g_sig)
 end
 
 cp_sig = exp(1j*2*pi*fd/f_DAC*sum_g_sig);
+
 IF_sig = real(cp_sig .* exp(1j*2*pi*fIF/f_DAC*[0:length(cp_sig)-1]));
 
 t_DMA_sig = filter(CPFSK_IIR, DAC(IF_sig, f_DMA));

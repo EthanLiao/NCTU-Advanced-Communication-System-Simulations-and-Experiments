@@ -1,15 +1,15 @@
 clf;clear all;close all;
 
-N = 200;
+N = 20;
 sig = randi([0,1],1,N);
 sig((sig==0)) = -1;
 
 % transmit sig
-t_sig = trans_branch(sig);
+c_sig = trans_branch(sig);
 
 % 1x2 System
 H = randn(2,1);
-mimo_rcv = H*t_sig;
+mimo_rcv = H*c_sig;
 
 
 
@@ -19,7 +19,7 @@ mimo_rcv_2 = recieve_branch(mimo_rcv(2,:));
 
 % SIMO detector
 inv_H = 1./H';
-mimo_rcv = [mimo_rcv_1 ; mimo_rcv_2]
+mimo_rcv = [mimo_rcv_1 ; mimo_rcv_2];
 rcv_beam = inv_H * mimo_rcv / length(inv_H);
 
 % signal detect
@@ -42,12 +42,16 @@ function trans_sig = trans_branch(sig)
   srrc_4 =srrc_pulse(4, 5, 1);
   srrc_16 =srrc_pulse(16, 5, 1);
   t_DAC_sig = conv(DAC(sig, f_DAC), srrc_16, 'same');
+  t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+
   t_DMA_sig = conv(DAC(t_DAC_sig, f_DMA), srrc_4, 'same');
+  t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+
   t = [0:length(t_DMA_sig)-1];
   trans_sig = real(t_DMA_sig .* exp(j*2*pi*fc/fs*t));
 end
 
-function rcv_sig = recieve_branch(demod_sig)
+function r_DAC_sig = recieve_branch(c_sig)
   fc = 16*10^6;
   fs = 64*10^6;
   f_DAC = 16;
@@ -55,14 +59,16 @@ function rcv_sig = recieve_branch(demod_sig)
   srrc_4 =srrc_pulse(4, 5, 1);
   srrc_16 =srrc_pulse(16, 5, 1);
 
-  t = [0:length(demod_sig)-1];
-  demod_sig = demod_sig .* exp(-j*2*pi*fc/fs*t);
+  t = [0:length(c_sig)-1];
+  c_sig = c_sig .* exp(-1j*2*pi*fc/fs*t);
 
-  f_sig = conv(demod_sig, srrc_4, 'same');
-  r_DMA_sig = ADC(f_sig,f_DMA);
+  r_DMA_sig = conv(c_sig, srrc_4, 'same');
+  r_DMA_sig = ADC(r_DMA_sig,f_DMA);
+  r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
   r_DAC_sig = conv(r_DMA_sig,srrc_16, 'same');
-  rcv_sig = ADC(r_DAC_sig,f_DAC);
+  r_DAC_sig = ADC(r_DAC_sig,f_DAC);
+  r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
 end
 
 function DAC_sig = DAC(origin_signal,up_factor)

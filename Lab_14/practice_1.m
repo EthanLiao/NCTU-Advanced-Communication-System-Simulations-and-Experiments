@@ -32,15 +32,14 @@ function adc_sig = real_ADC(val, bits_amt, range)
   range_max = range(2);
   range_min = range(1);
   step = (range_max-range_min) / q_lev;
-  offset = 0.5*step;  % quantize step offset
   % min and max value clamping
   val(val>range_max) = range_max;
   val(val<range_min) = range_min;
 
   % quantization
   adc_sig = range_min + round((val-range_min)./step)*step;
+  offset = 0.5*step;  % quantize step offset
   % adc_sig(adc_sig>range_max-offset) = range_max-step;
-
 end
 
 function sqnr = SQNR(x,x_q)

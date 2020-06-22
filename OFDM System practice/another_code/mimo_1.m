@@ -12,6 +12,9 @@ sig_2((sig_2==0)) = -1;
 
 sig = [sig_1 ; sig_2];
 
+sig = randi([0 1],2,N);
+sig(sig == 0 ) = -1;
+
 % second way to generate signal
 %%%%%%%%%%%
 sig = randi([0 1],2,N);

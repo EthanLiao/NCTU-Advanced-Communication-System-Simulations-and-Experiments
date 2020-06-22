@@ -9,10 +9,12 @@ sig_2((sig_2==0)) = -1;
 
 sig = [sig_1 ; sig_2];
 
+sig = randi([0 1],2,N);
+sig(sig==0) = -1;
 
 % 2x2 System
 H = randn(2,2);
-H = sqrt(1/2) * H +1j * sqrt(1/2) * H;
+H = sqrt(1/2) * H + 1j * sqrt(1/2) * H;
 mimo_rcv = H*sig;
 
 
