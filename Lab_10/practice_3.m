@@ -42,7 +42,7 @@ sig_with_carrier = im_sig_real.*carrier_cos+im_sig_imag.*(-carrier_sin);
 
 % CFO
 t = [0:length(sig_with_carrier)-1];
-cfo = 0.001*fc;
+cfo = 0.01*fc;
 carrier_cos_cfo = sqrt(2)*cos(2*pi*(fc+cfo)/fs*t);
 carrier_sin_cfo = sqrt(2)*sin(2*pi*(fc+cfo)/fs*t);
 
@@ -58,13 +58,13 @@ scatterplot(rcv_sig_real+1j*rcv_sig_imag);
 
 rcv_sig = rcv_sig_real + 1j*rcv_sig_imag;
 
-cfo_rcv_sig = rcv_sig;
-cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)>0) = 1+1j;
-cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)<0) = 1-1j;
-cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)>0) = -1+1j;
-cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)<0) = -1-1j;
+% cfo_rcv_sig = rcv_sig;
+% cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)>0) = 1+1j;
+% cfo_rcv_sig(real(cfo_rcv_sig)>0 & imag(cfo_rcv_sig)<0) = 1-1j;
+% cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)>0) = -1+1j;
+% cfo_rcv_sig(real(cfo_rcv_sig)<0 & imag(cfo_rcv_sig)<0) = -1-1j;
 
-[cfo_per,cfo_db] = EVM(cfo_rcv_sig,sig);
+[cfo_per,cfo_db] = EVM(rcv_sig,sig);
 rcv_sig = sqrt(2)*rcv_sig.*exp(1j*2*pi*cfo_per*fc/(10^6)*[0:length(rcv_sig)-1]);
 
 figure()
@@ -73,8 +73,8 @@ subplot(2,1,2);stem(imag(sig));hold on;stem(rcv_sig_imag);title("non comp imag s
 
 
 figure();
-subplot(2,1,1);stem(real(sig));hold on;stem(real(rcv_sig));title("comp real signal")
-subplot(2,1,2);stem(imag(sig));hold on;stem(imag(rcv_sig));title("comp imag signal")
+subplot(2,1,1);stem(real(sig));hold on;stem(real(rcv_sig)/max(real(rcv_sig)));title("comp real signal")
+subplot(2,1,2);stem(imag(sig));hold on;stem(imag(rcv_sig)/max(imag(rcv_sig)));title("comp imag signal")
 
 
 
@@ -96,6 +96,7 @@ function rcv_sig = recieve_branch(demod_sig,f_DMA,IIR_filter,f_DAC,srrc,group_de
   f_sig = f_sig(group_delay:end);
   r_DMA_sig = ADC(f_sig,f_DMA);
   r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+
   srrc_delay = (length(srrc)-1)/2;
   r_DAC_sig = conv(r_DMA_sig,srrc);
   r_DAC_sig = r_DAC_sig(srrc_delay+1:end- srrc_delay);
@@ -125,6 +126,7 @@ function [y,t] = srrc_pulse(T,A,a)
 end
 
 function [EVM_per,EVM_dB] = EVM(real_sig, ideal_sig)
-  EVM_per = sqrt(mean(abs(ideal_sig-real_sig).^2)/mean(abs(ideal_sig).^2)) / 100;
+  EVM_per = sqrt(mean(abs(ideal_sig-real_sig).^2)/mean(abs(ideal_sig).^2))/1000;
+  % EVM_per = angle(mean(ideal_sig-real_sig));
   EVM_dB = 10*log10(mean(abs(ideal_sig-real_sig).^2)/mean(abs(ideal_sig).^2));
 end

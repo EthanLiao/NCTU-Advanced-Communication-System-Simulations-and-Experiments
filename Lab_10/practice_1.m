@@ -11,7 +11,7 @@ f_DAC = 16;
 f_DMA = 4;
 g = 1;
 phi = pi/3;
-group_delay = 3;
+group_delay = 6;
 
 srrc_16 = srrc_pulse(16,5,0.3);
 srrc_16_len = length(srrc_16);

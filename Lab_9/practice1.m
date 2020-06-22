@@ -8,9 +8,9 @@ load('./filter/IIR_filter')
 
 symbol_rate = 1e6;
 carrier_frequency = 8e6/symbol_rate;
-DAC_freq = 16e6/symbol_rate;
-DMA_freq = 32e6/symbol_rate;
-group_delay = 2;
+freq_DAC = 16e6/symbol_rate;
+freq_DMA = 32e6/symbol_rate;
+group_delay = 1;
 
 srrc_16 = srrc_pulse(16, 5, 0.3);
 srrc_2 = srrc_pulse(2,5,0.3);
@@ -19,29 +19,29 @@ srrc_16_delay = (length(srrc_16)-1)/2;
 srrc_2_delay = (length(srrc_2)-1)/2;
 
 % modulatoin part
-t_DAC_sig = conv(DAC(sig,DAC_freq),srrc_16);
+t_DAC_sig = conv(DAC(sig,freq_DAC),srrc_16);
 t_DAC_sig = t_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
 t_DAC_sig = t_DAC_sig/max(t_DAC_sig);
 
 
-t_DMA_sig = conv(DAC(t_DAC_sig,DMA_freq/DAC_freq),srrc_2);
+t_DMA_sig = conv(DAC(t_DAC_sig,freq_DMA/freq_DAC),srrc_2);
 t_DMA_sig = t_DMA_sig(srrc_2_delay:end-srrc_2_delay);
 t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
 
 
 t_sig = filter(IIR_filter,t_DMA_sig);
-t_sig = t_sig(2:end);
+t_sig = t_sig(group_delay:end);
 
 % modulatoin with carrier
 t = [0:length(t_sig)-1];
-carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency/DMA_freq*t);
+carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency/freq_DMA*t);
 sig_with_carrier = real(t_sig .* carrier);
 
 % demodulation
 demod_sig = real(sig_with_carrier .* conj(carrier));
 r_ADC_sig = filter(IIR_filter,demod_sig);
 r_ADC_sig = r_ADC_sig(group_delay:end);
-r_ADC_sig = ADC(r_ADC_sig,DMA_freq);
+r_ADC_sig = ADC(r_ADC_sig,freq_DMA);
 
 rcv_sig = r_ADC_sig./ max(abs(r_ADC_sig));
 

@@ -48,7 +48,7 @@ r_fIF = r_DMA_sig.*exp(-1j*2*pi*fIF/f_DAC*[0:length(r_DMA_sig)-1]);
 
 r_srrc = conv(r_fIF,srrc_4);
 r_srrc = r_srrc(srrc_4_delay+1:end-srrc_4_delay);
-r_srrc = r_srrc / max(r_srrc);
+% r_srrc = r_srrc / max(r_srrc);
 
 r_phase = phase(r_srrc);
 r_phase_diff = zeros(1,length(r_phase));

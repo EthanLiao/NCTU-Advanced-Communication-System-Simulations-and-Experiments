@@ -30,9 +30,11 @@ r_DAC_sig = ISI_rcvbranch(c_sig);
 
 equalizer = 20*(-1/56)*((1/2).^[0:length(r_DAC_sig)-1]);
 equalized_sig = conv(r_DAC_sig, equalizer);
+equalized_sig = equalized_sig / max(equalized_sig);
 
 equalizer = 20*(36/119/5)*6/5*((6/5).^[-length(equalized_sig):-1]);
 equalized_sig = conv(equalized_sig, equalizer);
+equalized_sig = equalized_sig / max(equalized_sig);
 
 equalizer = 20*(1/68/2)*((-1/2).^[0:length(equalized_sig)-1]);
 equalized_sig = conv(equalized_sig, equalizer);
@@ -70,7 +72,7 @@ function c_sig = transbranch(sig)
   t_DMA_sig = t_DMA_sig(group_delay:end);
   t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
-  c_sig = real(t_DMA_sig .* exp(1j*pi*fc/freq_DMA*[0:length(t_DMA_sig)-1]));
+  c_sig = real(t_DMA_sig .* exp(1j*2*pi*fc/freq_DMA*[0:length(t_DMA_sig)-1]));
 end
 
 function r_DAC_sig = rcvbranch(c_sig)
@@ -122,12 +124,12 @@ function c_sig = ISI_transbranch(sig)
   % DAC
   t_DAC_sig = conv(srrc_3, DAC(sig, f_DAC));
   t_DAC_sig = t_DAC_sig(srrc_3_delay+1:end-srrc_3_delay);
-  % t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
+  t_DAC_sig = t_DAC_sig / max(t_DAC_sig);
 
   % DMA
   t_DMA_sig = conv(srrc_8, DAC(t_DAC_sig, f_DMA));
   t_DMA_sig = t_DMA_sig(srrc_8_delay+1:end-srrc_8_delay);
-  % t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
+  t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
   c_sig = real(t_DMA_sig .* exp(1j*2*pi*fc/freq_DMA*[0:length(t_DMA_sig)-1]));
 end
@@ -144,19 +146,19 @@ function r_DAC_sig = ISI_rcvbranch(c_sig)
   srrc_8 = rcosine(1, 8, 'fir/sqrt', 0.3, 5);
   srrc_8_delay = (length(srrc_8)-1)/2;
 
-  c_sig = c_sig .* exp(-1j*2*pi*fc/freq_DMA*[0:length(c_sig)-1]);
+  c_sig = real(c_sig .* exp(-1j*2*pi*fc/freq_DMA*[0:length(c_sig)-1]));
 
   % DMA
   r_DMA_sig = conv(srrc_8,c_sig);
   r_DMA_sig = r_DMA_sig(srrc_8_delay+1:end-srrc_8_delay);
   r_DMA_sig = ADC(r_DMA_sig, f_DMA);
-  % r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+  r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
   % DAC
   r_DAC_sig = conv(srrc_3,r_DMA_sig);
   r_DAC_sig = r_DAC_sig(srrc_3_delay+1:end-srrc_3_delay);
   r_DAC_sig = ADC(r_DAC_sig, f_DAC);
-  % r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
+  r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
 
   r_DAC_sig = real(r_DAC_sig);
 end

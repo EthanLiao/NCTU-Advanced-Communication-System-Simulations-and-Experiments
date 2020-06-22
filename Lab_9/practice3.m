@@ -5,9 +5,9 @@ sig((sig==0)) = -1;
 
 symbol_rate = 1e6;
 % carrier frequency is 1/4 DMA frequency
-carrier_frequency = 8e6;
+fc = 8e6;
 % Both IF frequency and (carrier frequency-IF frequency)  is the 1/4 of ADC frequency
-IF_frequency = 4e6;
+fIF = 4e6;
 
 freq_DAC = 16e6;
 freq_DMA = 32e6;
@@ -26,29 +26,29 @@ load('./filter/IIR_filter')
 t_DAC_sig = conv(DAC(sig,f_DAC),srrc_16);
 t_DAC_sig = t_DAC_sig(srrc_16_delay+1:end-srrc_16_delay);
 
-t_DMA_ana_sig = conv(DAC(t_DAC_sig,f_DMA),srrc_2);
-t_DMA_ana_sig = t_DMA_ana_sig(srrc_2_delay+1:end-srrc_2_delay);
+t_DMA_sig = conv(DAC(t_DAC_sig,f_DMA),srrc_2);
+t_DMA_sig = t_DMA_sig(srrc_2_delay+1:end-srrc_2_delay);
 
-t_DMA_sig = filter(IIR_filter,t_DMA_ana_sig);
+t_DMA_sig = filter(IIR_filter,t_DMA_sig);
 t_DMA_sig = t_DMA_sig(group_delay:end);
 
 % modulatoin with carrier
 t = [0:length(t_DMA_sig)-1];
-carrier = sqrt(2)*exp(1j*2*pi*carrier_frequency/freq_DMA*t);
-sig_with_carrier = real(t_DMA_sig .* carrier);
+carrier = sqrt(2)*exp(1j*2*pi*fc/freq_DMA*t);
+c_sig = real(t_DMA_sig .* carrier);
 
 % IF Band
-t_vec = [1:length(sig_with_carrier)];
-carrier = cos(2*pi*(carrier_frequency-IF_frequency)/freq_DMA*t_vec);
+t = [1:length(c_sig)];
+carrier = cos(2*pi*(fc-fIF)/freq_DMA*t);
+IF_sig = c_sig .* carrier;
 
-IF_sig = sig_with_carrier .* carrier;
-r_DMA_f_sig = conv(IF_sig,srrc_2);
-r_DMA_f_sig = r_DMA_f_sig(srrc_2_delay+1:end-srrc_2_delay);
-r_DMA_sig = ADC(r_DMA_f_sig,f_DMA);
+r_DMA_sig = conv(IF_sig,srrc_2);
+r_DMA_sig = r_DMA_sig(srrc_2_delay+1:end-srrc_2_delay);
+r_DMA_sig = ADC(r_DMA_sig,f_DMA);
 
 % demodulatoin with IF carrier
 t = [0:length(r_DMA_sig)-1];
-carrier = exp(-1j*(2*pi*IF_frequency/freq_DAC*t));
+carrier = exp(-1j*(2*pi*fIF/freq_DAC*t));
 demod_sig = real(r_DMA_sig .* carrier);
 
 % demodulation
