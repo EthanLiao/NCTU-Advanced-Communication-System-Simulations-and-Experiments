@@ -14,8 +14,8 @@ sig = randi([0 1],1,N);
 sig(sig==0) = -1;
 
 BT = 0.5;
-g_filter = Gfilter(BT, f_DAC);
-g_delay = (length(g_filter)-1)/2;
+% g_filter = Gfilter(BT, f_DAC);
+% g_delay = (length(g_filter)-1)/2;
 
 g_filter = ones(1,9);
 g_delay = (length(g_filter)-1)/2;
