@@ -1,12 +1,7 @@
 clf; clear all; close all;
-N = 60;
-mod_sig = zeros(1,N);
-sig = randi([0 1],N,2);
-
-
 
 fb = 1e6;
-fd = 14*150e3 /fb;
+fd = 1*150e3 /fb;
 fIF = 2e6 / fb;
 freq_DAC = 16e6;
 freq_DMA = 64e6;
@@ -18,11 +13,20 @@ N = 60;
 sig = randi([0 1],1,N);
 sig(sig==0) = -1;
 
+sig = randi([0 1],N,2);
+
+% signal mapping
+mod_sig(ismember(sig,[0 0],'rows')) = 1+1j;
+mod_sig(ismember(sig,[0 1],'rows')) = -1+1j;
+mod_sig(ismember(sig,[1 1],'rows')) = -1-1j;
+mod_sig(ismember(sig,[1 0],'rows')) = 1-1j;
+
+sig = mod_sig;
 BT = 0.5;
 % g_filter = Gfilter(BT, f_DAC);
 % g_delay = (length(g_filter)-1)/2;
 
-g_filter = ones(1,9);
+g_filter = ones(1,11);
 g_delay = (length(g_filter)-1)/2;
 
 load('./filter/CPFSK_IIR')
@@ -52,21 +56,24 @@ t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 % t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
 % t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
+SNR_DB = 20;
+t_DMA_sig = add_awgn_noise(t_DMA_sig,SNR_DB);
+
 % reciever
 r_DMA_sig = filter(CPFSK_IIR, t_DMA_sig);
 r_DMA_sig = r_DMA_sig(group_delay:end);
 r_DMA_sig = ADC(r_DMA_sig, f_DMA);
 r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
-% r_DMA_sig = conv(srrc_4 , t_DMA_sig);
-% r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-% r_DMA_sig = ADC(r_DMA_sig, f_DMA);
-% r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
+
+r_DMA_sig = conv(srrc_4 , t_DMA_sig);
+r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+r_DMA_sig = ADC(r_DMA_sig, f_DMA);
+r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
 r_fIF = r_DMA_sig.*exp(-1j*2*pi*fIF/f_DAC*[0:length(r_DMA_sig)-1]);
 
 r_srrc = conv(r_fIF,srrc_4);
 r_srrc = r_srrc(srrc_4_delay+1:end-srrc_4_delay);
-% r_srrc = r_srrc / max(r_srrc);
 
 r_phase = phase(r_srrc);
 r_phase_diff = zeros(1,length(r_phase));
@@ -78,11 +85,11 @@ r_DAC_sig = r_DAC_sig(g_delay+1:end-g_delay);
 r_DAC_sig = ADC(r_DAC_sig, f_DAC);
 r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
 
-r_DAC_sig(r_DAC_sig>0) = 0.5;
-r_DAC_sig(r_DAC_sig<0) = -0.5;
 
-stem(sig);hold on;stem(r_DAC_sig)
-legend("transmitted signal","recieved signal")
+evm_result = EVM(sig,r_DAC_sig)
+
+% stem(sig);hold on;stem(r_DAC_sig)
+% legend("transmitted signal","recieved signal")
 
 figure()
 plot(phase(cp_sig));hold on;plot(phase(r_srrc));
@@ -93,9 +100,9 @@ spectrum = 10*log10(spec);
 center = max(spectrum);
 plot(f,spectrum);
 hold on;
-spec_vec = [0.5/64:0.001:1/64 1/64:0.001:3/64 3/64:0.001:3.5/64];
-mask = [(center-26)*ones(1,8) (center)*ones(1,32) (center-26)*ones(1,8)];
-plot(spec_vec, mask);
+freq_vec = [0.5/64:0.001:1/64 1/64:0.001:2/64 2/64:0.001:3/64 3/64:0.001:3.5/64 3.5/64:0.001:4.5/64 4.5/64:0.001:5.5/64];
+spec_vec = [(center-26)*ones(1,8) center*ones(1,16) center*ones(1,16) (center-26)*ones(1,8) (center-46)*ones(1,16) (center-66)*ones(1,16)];
+plot(freq_vec, spec_vec);
 
 function u_sig = DAC(sig, u_factor)
   u_sig = zeros(1, length(sig)*u_factor);
@@ -149,4 +156,24 @@ function PHI=phase(G)
   if nr>nc
       PHI = PHI.';
   end
+end
+
+
+function evm_db = EVM(sig, rcv_sig)
+  evm_db = 10*log10(mean(abs(sig-rcv_sig).^2) / mean(abs(sig).^2));
+end
+
+
+function y = add_awgn_noise(x,SNR_DB)
+  L = length(x);
+  % calculate symbol energy
+  SNR = 10^(SNR_DB/10); % SNR enery to linear scale
+  SYME = sum(abs(x).^2) / L;
+  N0 = SYME / SNR;      % Noise spectral Density
+  if isreal(x)
+    n = sqrt(N0) * randn(1,L);
+  else
+    n = sqrt(N0/2) * (randn(1,L)+i*randn(1,L));
+  end
+  y = x + n;
 end

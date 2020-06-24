@@ -1,215 +1,113 @@
-% Parametors
-clf;clear all;close all;
-% notice that fb fd fIF should be normalized
-fb = 1*10^6;        % data rate
-fc = 2.4*10^9/fb;   % data band
-fd = 1*150*10^3/fb;
-fIF = 2*10^6/fb;
-f_DAC = 16*10^6/fb;
-f_DMA = 64*10^6/fb;
-fb = fb/fb;
-Tb = 1/fb;
+clf; clear all; close all;
+
+fb = 1e6;
+fd = 1*150e3 /fb;
+fIF = 2e6 / fb;
+freq_DAC = 16e6;
+freq_DMA = 64e6;
+f_DAC = freq_DAC / fb;
+f_DMA = freq_DMA / freq_DAC;
+fb = fb /fb;
+
+N = 60;
+sig = randi([0 1],1,N);
+sig(sig==0) = -1;
+
 BT = 0.5;
+% g_filter = Gfilter(BT, f_DAC);
+% g_delay = (length(g_filter)-1)/2;
 
-N = 256;
-signal = randi([0 1],1,N);
-signal(signal==0) = -1;
+g_filter = ones(1,11);
+g_delay = (length(g_filter)-1)/2;
 
-gau_filter = Gfilter(BT,f_DAC,Tb/f_DAC);
-gau_delay = (length(gau_filter)-1)/2;
-figure()
-plot(gau_filter);title("Gaussian filter");
+load('./filter/CPFSK_IIR')
+group_delay = 12;
 
-srrc_16 = srrc_pulse(f_DAC,10,1);
-srrc_16_delay = (length(srrc_16)-1)/2;
-
-srrc_4 = srrc_pulse(f_DMA/f_DAC,10,1);
+srrc_4 = rcosine(1,4,'fir/sqrt',0.3,5);
 srrc_4_delay = (length(srrc_4)-1)/2;
+srrc_4 = srrc_4 / sum(sqrt(srrc_4.^2));
 
-% Gaussian filter
-t_DAC_sig = DAC(signal, f_DAC/fb);
-g_sig = conv(t_DAC_sig, gau_filter, 'same');
+g_sig = conv(g_filter, DAC(sig, f_DAC));
+g_sig = g_sig(g_delay+1:end-g_delay);
+g_sig = g_sig / max(g_sig);
 
-% g_sig = g_sig(gau_delay+1:end-gau_delay);
-% g_sig = g_sig / max(g_sig);
-
-% sum
-for i = 1:length(g_sig)
-  sum_gsig(i) = sum(g_sig(1:i));
+for i=1:length(g_sig)
+  sum_g_sig(i) =  sum(g_sig(1:i));
 end
-cp_sig = exp(1j*2*pi*fd*1/(fb*f_DAC)*sum_gsig);
 
+cp_sig = exp(1j*2*pi*fd/f_DAC*sum_g_sig);
 
+IF_sig = real(cp_sig .* exp(1j*2*pi*fIF/f_DAC*[0:length(cp_sig)-1]));
 
-% IF modulation
-t = [0:length(cp_sig)-1];
-IF_sig = real(cp_sig.*exp(1j*2*pi*fIF/(f_DAC*fb)*t));
+% t_DMA_sig = filter(CPFSK_IIR, DAC(IF_sig, f_DMA));
+% t_DMA_sig = t_DMA_sig(group_delay:end);
+% t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
+t_DMA_sig = conv(srrc_4, DAC(IF_sig, f_DMA));
+t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
+t_DMA_sig = t_DMA_sig / max(t_DMA_sig);
 
-% DAC/F
-t_DMA_sig = conv(DAC(IF_sig, f_DMA/f_DAC), srrc_4, 'same');
-% t_DMA_sig = t_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-% t_DMA_sig = t_DMA_sig/max(t_DMA_sig);
+% reciever
+% r_DMA_sig = filter(CPFSK_IIR, t_DMA_sig);
+% r_DMA_sig = r_DMA_sig(group_delay:end);
+% r_DMA_sig = ADC(r_DMA_sig, f_DMA);
+% r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
-% modulation with Carrier
-t = [0:length(t_DMA_sig)-1];
-carrier = exp(1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
-carrier_sig = t_DMA_sig .*carrier;
-
-% AWGN
-SNR_DB = 1;
-noise_sig = AWGN(carrier_sig,SNR_DB);
-
-% demodulation
-t = [0:length(noise_sig)-1];
-carrier = exp(-1j*2*pi*(fc-fIF)/(fb*f_DAC*f_DMA)*t);
-demod_sig = noise_sig.*carrier;
-
-% F/ADC
-r_DMA_sig = conv(t_DMA_sig, srrc_4);
+r_DMA_sig = conv(srrc_4 , t_DMA_sig);
 r_DMA_sig = r_DMA_sig(srrc_4_delay+1:end-srrc_4_delay);
-r_DMA_sig = ADC(r_DMA_sig, f_DMA/f_DAC);
-% r_DMA_sig = real_ADC(r_DMA_sig, 6,[min(r_DMA_sig),max(r_DMA_sig)]);
+r_DMA_sig = ADC(r_DMA_sig, f_DMA);
+r_DMA_sig = r_DMA_sig / max(r_DMA_sig);
 
-% IF demodulation
-t = [0:length(r_DMA_sig)-1];
-dmod_IF_sig = r_DMA_sig .* exp(-1j*2*pi*fIF/(f_DAC/fb)*t);
+r_fIF = r_DMA_sig.*exp(-1j*2*pi*fIF/f_DAC*[0:length(r_DMA_sig)-1]);
 
-% F/PH
-re_srrc = conv(dmod_IF_sig,srrc_4);
-re_srrc = re_srrc(srrc_4_delay+1:end-srrc_4_delay);
-% re_srrc = re_srrc/max(re_srrc);
+r_srrc = conv(r_fIF,srrc_4);
+r_srrc = r_srrc(srrc_4_delay+1:end-srrc_4_delay);
+% r_srrc = r_srrc / max(r_srrc);
 
+r_phase = phase(r_srrc);
+r_phase_diff = zeros(1,length(r_phase));
+r_phase_diff(1) = r_phase(1);
+r_phase_diff(2:end) = r_phase(2:end)-r_phase(1:end-1);
 
-% phase and diff
-re_phase = phase(re_srrc);
-re_phase_diff(1) = re_phase(1)/(2*pi*fd*1/fb);
-for i = 2:length(re_phase)
-  re_phase_diff(i) = (re_phase(i)-re_phase(i-1))/(2*pi*fd*1/fb);
-end
+r_DAC_sig = conv(r_phase_diff, g_filter);
+r_DAC_sig = r_DAC_sig(g_delay+1:end-g_delay);
+r_DAC_sig = ADC(r_DAC_sig, f_DAC);
+r_DAC_sig = r_DAC_sig / max(r_DAC_sig);
 
-% Gaussian Filter and ADC
-r_sig = conv(re_phase_diff, gau_filter);
-r_sig = r_sig(gau_delay+1:end-gau_delay);
+r_DAC_sig(r_DAC_sig>0) = 0.5;
+r_DAC_sig(r_DAC_sig<0) = -0.5;
 
-r_sig = ADC(r_sig, f_DAC/fb);
-
-% r_sig = real_ADC(r_sig, 6,[min(r_sig),max(r_sig)]);
-
-r_sig(r_sig<0) = -0.5;
-r_sig(r_sig>0) = 0.5;
+stem(sig);hold on;stem(r_DAC_sig)
+legend("transmitted signal","recieved signal")
 
 figure()
-stem(signal)
-hold on
-stem(r_sig);title('Recieved signal');
-legend('transmitted','recieved');
-
+plot(phase(cp_sig));hold on;plot(phase(r_srrc));
 
 figure()
-plot(phase(cp_sig));
-hold on
-plot(phase(re_srrc));
-title("phase comparison");
-
-figure()
-plot(abs(fftshift(fft(cp_sig))));
-hold on
-plot(abs(fftshift(fft(re_srrc))));
-title('frequency domain of gaussian modulated and demodulated signal');
-legend("modulated", "demodulated");
-
-
-% spectrum mask
-figure()
-[px, f] = pwelch(t_DMA_sig,[],[],[],1);
-freq_domain = 10*log10(px);
-N = 500;
-plot(f(1:N),freq_domain(1:N));
-title("spectrum mask");
+[spec,f] = pwelch(t_DMA_sig,[],[],[],1);
+spectrum = 10*log10(spec);
+center = max(spectrum);
+plot(f,spectrum);
 hold on;
-center = max(10*log10(px));
-
-% , 0.01:3/64
 freq_vec = [0.5/64:0.001:1/64 1/64:0.001:2/64 2/64:0.001:3/64 3/64:0.001:3.5/64 3.5/64:0.001:4.5/64 4.5/64:0.001:5.5/64];
 spec_vec = [(center-26)*ones(1,8) center*ones(1,16) center*ones(1,16) (center-26)*ones(1,8) (center-46)*ones(1,16) (center-66)*ones(1,16)];
 plot(freq_vec, spec_vec);
-hold on;
-% hold on;
-% freq_vec = [2/64 3/64 3.5/64 4.5/64]
-% spec_vec = [center center-26 center-46 center-86];
 
-
-function y = AWGN(x,N_dB)
-  L = length(x);
-  SNR_DB = 10^(N_dB/10);
-  SYME = sum(abs(x).^2)/L;
-  N0 = SYME / SNR_DB;
-  if isreal(x)
-    n = sqrt(N0) * randn(1,L);
-  else
-    n = sqrt(N0/2) * (randn(1,L)+1j*randn(1,L));
-  end
-  y = x + n ;
+function u_sig = DAC(sig, u_factor)
+  u_sig = zeros(1, length(sig)*u_factor);
+  u_sig([1:u_factor:end]) = sig;
 end
 
-
-% some function for reuse
-function up_sig = DAC(sig,up_factor)
-  up_sig = zeros(1,length(sig)*up_factor);
-  up_sig(1:up_factor:end) = sig;
+function d_sig = ADC(sig, d_factor)
+  d_sig = zeros(1, length(sig));
+  d_sig = sig(1:d_factor:end);
 end
 
-function down_sig = ADC(sig, down_factor)
-  down_sig = zeros(1, length(sig));
-  down_sig = sig(1:down_factor:end);
-end
-
-function adc_sig = real_ADC(val, bits_amt, range)
-% val : analog input vector
-% bits_amt : total number of bits to quantize input value
-% range : quantization input range, i.e. [min_in, max_in]
-
-  q_lev = 2^bits_amt;
-  range_max = range(2);
-  range_min = range(1);
-  step = (range_max-range_min) / q_lev;
-  offset = 0.5*step;  % quantize step offset
-  % min and max value clamping
-  val(val>range_max) = range_max;
-  val(val<range_min) = range_min;
-
-  % quantization
-  adc_sig = range_min + round((val-range_min)./step)*step;
-  % adc_sig(adc_sig>range_max-offset) = range_max-step;
-
-end
-
-
-% Gaussian Filter
-function g_filter = Gfilter(BT, M, Tb)
+function g_filter = Gfilter(BT, M)
   t = [-128:128];
-  % B = BT/Tb;
   C = sqrt(2*pi/log(2));
-  g_filter = C*exp(-2*(pi^2)/log(2)*(BT/M)^2*(t.^2));
-  g_filter = g_filter ./ sqrt(sum(g_filter.^2));
-end
-
-
-function [y,t] = srrc_pulse(T,A,a)
-  t = [-A*T:A*T] + 10^(-8);
-  if (a>0 && a<=1)
-    num = cos((1+a)*pi*t/T) + T*sin((1-a)*pi*t/T)./(4*a*t);
-    denom = 1-(4*a*t/T).^2;
-    y = (4*a/pi) * num./denom;
-  else
-    y = 1/T * sin(pi.*t./T) ./ (pi*t./T);
-  end
-end
-
-function [EVM_per,EVM_dB] = EVM(real_sig, ideal_sig)
-  EVM_per = sqrt(mean((ideal-real_sig).^2)/mean(ideal_sig.^2)) / 100;
-  EVM_dB = 10*log10(mean((ideal-real_sig).^2)/mean(ideal_sig.^2));
+  g_filter =  C * exp(-2*pi^2/log(2)*(BT/M)^2*t.^2);
+  g_filter = g_filter / sqrt(sum(g_filter.^2));
 end
 
 function PHI=phase(G)
